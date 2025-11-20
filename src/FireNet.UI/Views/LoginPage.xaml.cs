@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using System.Windows;
 using FireNet.UI.ViewModels;
 
 namespace FireNet.UI.Views
@@ -9,10 +10,10 @@ namespace FireNet.UI.Views
         {
             InitializeComponent();
 
-            var vm = new LoginViewModel();
-            this.DataContext = vm;
-
-            vm.GetPassword = () => PasswordBox.Password;
+            if (DataContext is LoginViewModel vm)
+            {
+                vm.GetPassword = () => PasswordInput.Password;
+            }
         }
     }
 }
