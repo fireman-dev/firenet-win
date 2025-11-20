@@ -30,8 +30,20 @@
                      Height="42"
                      FontSize="16"
                      Padding="10"
-                     Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
-                     PlaceholderText="Username"/>
+                     Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}">
+                <TextBox.Style>
+                    <Style TargetType="TextBox">
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Tag" Value="Username"/>
+                        <Style.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter Property="Text" Value="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"/>
+                                <Setter Property="Foreground" Value="#777"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBox.Style>
+            </TextBox>
 
             <!-- Password -->
             <PasswordBox Margin="0,10"
