@@ -41,8 +41,6 @@
                                          To="-16" Duration="0:0:0.18"/>
                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
                                          To="0.4" Duration="0:0:0.18"/>
-                        <DoubleAnimation Storyboard.TargetProperty="FontSize"
-                                         To="12" Duration="0:0:0.18"/>
                     </Storyboard>
 
                     <Storyboard x:Key="PlaceholderDown">
@@ -50,8 +48,6 @@
                                          To="0" Duration="0:0:0.18"/>
                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
                                          To="0.7" Duration="0:0:0.18"/>
-                        <DoubleAnimation Storyboard.TargetProperty="FontSize"
-                                         To="16" Duration="0:0:0.18"/>
                     </Storyboard>
                 </Grid.Resources>
 
@@ -77,19 +73,16 @@
                     </TextBlock.RenderTransform>
                 </TextBlock>
 
-                <!-- صحیح WPF -->
                 <Grid.Style>
                     <Style TargetType="Grid">
                         <Style.Triggers>
 
-                            <!-- فوکوس → انیمیشن بالا -->
                             <DataTrigger Binding="{Binding IsKeyboardFocused, ElementName=UsernameBox}" Value="True">
                                 <DataTrigger.EnterActions>
                                     <BeginStoryboard Storyboard="{StaticResource PlaceholderUp}"/>
                                 </DataTrigger.EnterActions>
                             </DataTrigger>
 
-                            <!-- خالی + بدون فوکوس → انیمیشن پایین -->
                             <MultiDataTrigger>
                                 <MultiDataTrigger.Conditions>
                                     <Condition Binding="{Binding IsKeyboardFocused, ElementName=UsernameBox}" Value="False"/>
@@ -115,8 +108,6 @@
                                          To="-16" Duration="0:0:0.18"/>
                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
                                          To="0.4" Duration="0:0:0.18"/>
-                        <DoubleAnimation Storyboard.TargetProperty="FontSize"
-                                         To="12" Duration="0:0:0.18"/>
                     </Storyboard>
 
                     <Storyboard x:Key="PassDown">
@@ -124,8 +115,6 @@
                                          To="0" Duration="0:0:0.18"/>
                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
                                          To="0.7" Duration="0:0:0.18"/>
-                        <DoubleAnimation Storyboard.TargetProperty="FontSize"
-                                         To="16" Duration="0:0:0.18"/>
                     </Storyboard>
                 </Grid.Resources>
 
@@ -150,19 +139,16 @@
                     </TextBlock.RenderTransform>
                 </TextBlock>
 
-                <!-- صحیح WPF -->
                 <Grid.Style>
                     <Style TargetType="Grid">
                         <Style.Triggers>
 
-                            <!-- فوکوس → بالا -->
                             <DataTrigger Binding="{Binding IsKeyboardFocused, ElementName=PasswordInput}" Value="True">
                                 <DataTrigger.EnterActions>
                                     <BeginStoryboard Storyboard="{StaticResource PassUp}"/>
                                 </DataTrigger.EnterActions>
                             </DataTrigger>
 
-                            <!-- خالی + بدون فوکوس → پایین -->
                             <MultiDataTrigger>
                                 <MultiDataTrigger.Conditions>
                                     <Condition Binding="{Binding IsKeyboardFocused, ElementName=PasswordInput}" Value="False"/>
