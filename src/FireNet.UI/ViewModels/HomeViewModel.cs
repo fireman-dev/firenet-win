@@ -8,13 +8,14 @@ using FireNet.Core.Api.Dto;
 using FireNet.Core.Config;
 using FireNet.Core.Session;
 using FireNet.Core.Xray;
+using System.IO;
 
 namespace FireNet.UI.ViewModels
 {
     public class HomeViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
-        private void Set(string name) => 
+        private void Set(string name) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         // -------------------------------------------------
@@ -33,7 +34,7 @@ namespace FireNet.UI.ViewModels
         public string ErrorMessage { get; set; }
         public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
 
-        private bool IsConnected => _xray.IsRunning();
+        private bool IsConnected => _xray.IsRunning;
 
         // -------------------------------------------------
         // Commands
@@ -55,7 +56,11 @@ namespace FireNet.UI.ViewModels
             _session = new SessionManager();
             _api = new PanelApiClient(_session, "https://your-panel.com");
             _configBuilder = new XrayConfigBuilder();
-            _xray = new XrayProcessManager();
+
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string xrayDir = Path.Combine(baseDir, "xray");
+
+            _xray = new XrayProcessManager(xrayDir);
 
             ConnectCommand = new RelayCommand(async (_) => await ConnectOrDisconnect());
 
@@ -99,9 +104,10 @@ namespace FireNet.UI.ViewModels
         // -------------------------------------------------
         private async Task ConnectOrDisconnect()
         {
-            if (_xray.IsRunning())
+            if (_xray.IsRunning)
             {
                 _xray.Stop();
+
                 ConnectionStatus = "Disconnected";
                 Set(nameof(ConnectionStatus));
                 Set(nameof(ConnectButtonText));
@@ -114,13 +120,14 @@ namespace FireNet.UI.ViewModels
                 Set(nameof(HasError));
                 Set(nameof(ErrorMessage));
 
-                if (SelectedProfile == null)
+                if (string.IsNullOrWhiteSpace(SelectedProfile))
                     throw new Exception("No server selected");
 
-                var configPath = _configBuilder.BuildConfig(new() { SelectedProfile });
+                string configPath = _configBuilder.BuildConfig(new() { SelectedProfile });
 
-                bool ok = _xray.Start(configPath);
-                if (!ok)
+                _xray.Start(configPath); // void → فقط اجرا می‌کنیم
+
+                if (!_xray.IsRunning)
                     throw new Exception("Failed to start Xray");
 
                 ConnectionStatus = "Connected";
@@ -130,9 +137,14 @@ namespace FireNet.UI.ViewModels
                 // KeepAlive background
                 _ = Task.Run(async () =>
                 {
-                    while (_xray.IsRunning())
+                    while (_xray.IsRunning)
                     {
-                        await _api.KeepAliveAsync();
+                        try
+                        {
+                            await _api.KeepAliveAsync();
+                        }
+                        catch { }
+
                         await Task.Delay(30_000);
                     }
                 });
