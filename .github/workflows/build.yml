@@ -30,6 +30,7 @@ jobs:
     # Add Xray-core files
     - name: Add Xray-core
       run: |
+        tree /F
         if not exist release\xray-core mkdir release\xray-core
         xcopy xray-core\* release\xray-core\ /E /Y
       shell: cmd
