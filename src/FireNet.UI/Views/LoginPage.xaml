@@ -3,8 +3,14 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:vm="clr-namespace:FireNet.UI.ViewModels"
       mc:Ignorable="d"
       Title="Login">
+
+    <!-- ست کردن ViewModel -->
+    <Page.DataContext>
+        <vm:LoginViewModel/>
+    </Page.DataContext>
 
     <Grid Background="#0F0F0F">
         <Grid.RowDefinitions>
@@ -80,7 +86,7 @@
                             <Style.Triggers>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding Path=Password, ElementName=PasswordInput}" Value=""/>
+                                        <Condition Binding="{Binding Password, ElementName=PasswordInput}" Value=""/>
                                         <Condition Binding="{Binding IsKeyboardFocused, ElementName=PasswordInput}" Value="False"/>
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Visibility" Value="Visible"/>
