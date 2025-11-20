@@ -25,41 +25,80 @@
                     VerticalAlignment="Top"
                     Margin="0,40,0,0">
 
-            <!-- Username -->
-            <TextBox Margin="0,10"
-                     Height="42"
-                     FontSize="16"
-                     Padding="10"
-                     Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}">
-                <TextBox.Style>
-                    <Style TargetType="TextBox">
-                        <Setter Property="Foreground" Value="White"/>
-                        <Setter Property="Tag" Value="Username"/>
-                        <Style.Triggers>
-                            <Trigger Property="Text" Value="">
-                                <Setter Property="Text" Value="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"/>
-                                <Setter Property="Foreground" Value="#777"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBox.Style>
-            </TextBox>
-
-            <!-- Password -->
-            <PasswordBox Margin="0,10"
+            <!-- USERNAME -->
+            <Grid Margin="0,10">
+                <TextBox x:Name="UsernameBox"
                          Height="42"
                          FontSize="16"
                          Padding="10"
-                         x:Name="PasswordBox"/>
+                         Foreground="White"
+                         Background="#1A1A1A"
+                         BorderBrush="#333"
+                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"/>
 
-            <!-- Login Button -->
+                <!-- Placeholder -->
+                <TextBlock Text="Username"
+                           Foreground="#777"
+                           Margin="14,0,0,0"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding Text, ElementName=UsernameBox}" Value=""/>
+                                        <Condition Binding="{Binding IsKeyboardFocused, ElementName=UsernameBox}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+
+            <!-- PASSWORD -->
+            <Grid Margin="0,10">
+                <PasswordBox x:Name="PasswordInput"
+                             Height="42"
+                             FontSize="16"
+                             Padding="10"
+                             Background="#1A1A1A"
+                             BorderBrush="#333"/>
+
+                <!-- Placeholder -->
+                <TextBlock Text="Password"
+                           Foreground="#777"
+                           Margin="14,0,0,0"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding Path=Password, ElementName=PasswordInput}" Value=""/>
+                                        <Condition Binding="{Binding IsKeyboardFocused, ElementName=PasswordInput}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+
+            <!-- LOGIN BUTTON -->
             <Button Content="Login"
                     Height="44"
                     Margin="0,20,0,0"
                     FontSize="18"
                     Command="{Binding LoginCommand}"/>
 
-            <!-- Error message -->
+            <!-- ERROR -->
             <TextBlock Text="{Binding ErrorMessage}"
                        Foreground="#FF5555"
                        FontSize="14"
