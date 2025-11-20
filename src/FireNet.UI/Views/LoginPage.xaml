@@ -32,8 +32,9 @@
                     Margin="0,40,0,0"
                     Orientation="Vertical">
 
-            <!-- ============ USERNAME FIELD ============ -->
+            <!-- USERNAME -->
             <Grid Margin="0,10">
+
                 <Grid.Resources>
                     <Storyboard x:Key="PlaceholderUp">
                         <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
@@ -64,42 +65,50 @@
                          BorderThickness="1.2"
                          Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <!-- placeholder -->
                 <TextBlock x:Name="UsernamePlaceholder"
                            Text="Username"
                            Foreground="#777"
                            FontSize="16"
                            Margin="14,12,0,0"
                            VerticalAlignment="Top"
-                           IsHitTestVisible="False"
-                           RenderTransformOrigin="0,0">
+                           IsHitTestVisible="False">
                     <TextBlock.RenderTransform>
                         <TranslateTransform/>
                     </TextBlock.RenderTransform>
                 </TextBlock>
 
-                <Grid.Triggers>
-                    <!-- Focus Up -->
-                    <EventTrigger SourceName="UsernameBox" RoutedEvent="GotFocus">
-                        <BeginStoryboard Storyboard="{StaticResource PlaceholderUp}"/>
-                    </EventTrigger>
+                <!-- صحیح WPF -->
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Style.Triggers>
 
-                    <!-- Empty LostFocus Down -->
-                    <EventTrigger SourceName="UsernameBox" RoutedEvent="LostFocus">
-                        <BeginStoryboard Storyboard="{StaticResource PlaceholderDown}">
-                            <BeginStoryboard.Condition>
-                                <MultiCondition>
+                            <!-- فوکوس → انیمیشن بالا -->
+                            <DataTrigger Binding="{Binding IsKeyboardFocused, ElementName=UsernameBox}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard Storyboard="{StaticResource PlaceholderUp}"/>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+
+                            <!-- خالی + بدون فوکوس → انیمیشن پایین -->
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsKeyboardFocused, ElementName=UsernameBox}" Value="False"/>
                                     <Condition Binding="{Binding Text, ElementName=UsernameBox}" Value=""/>
-                                </MultiCondition>
-                            </BeginStoryboard.Condition>
-                        </BeginStoryboard>
-                    </EventTrigger>
-                </Grid.Triggers>
+                                </MultiDataTrigger.Conditions>
+                                <MultiDataTrigger.EnterActions>
+                                    <BeginStoryboard Storyboard="{StaticResource PlaceholderDown}"/>
+                                </MultiDataTrigger.EnterActions>
+                            </MultiDataTrigger>
+
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
 
             </Grid>
 
-            <!-- ============ PASSWORD FIELD ============ -->
+            <!-- PASSWORD -->
             <Grid Margin="0,10">
+
                 <Grid.Resources>
                     <Storyboard x:Key="PassUp">
                         <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
@@ -135,32 +144,41 @@
                            FontSize="16"
                            Margin="14,12,0,0"
                            VerticalAlignment="Top"
-                           IsHitTestVisible="False"
-                           RenderTransformOrigin="0,0">
+                           IsHitTestVisible="False">
                     <TextBlock.RenderTransform>
                         <TranslateTransform/>
                     </TextBlock.RenderTransform>
                 </TextBlock>
 
-                <Grid.Triggers>
-                    <EventTrigger SourceName="PasswordInput" RoutedEvent="GotFocus">
-                        <BeginStoryboard Storyboard="{StaticResource PassUp}"/>
-                    </EventTrigger>
+                <!-- صحیح WPF -->
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Style.Triggers>
 
-                    <EventTrigger SourceName="PasswordInput" RoutedEvent="LostFocus">
-                        <BeginStoryboard Storyboard="{StaticResource PassDown}">
-                            <BeginStoryboard.Condition>
-                                <MultiCondition>
-                                    <Condition Binding="{Binding Path=Password, ElementName=PasswordInput}" Value=""/>
-                                </MultiCondition>
-                            </BeginStoryboard.Condition>
-                        </BeginStoryboard>
-                    </EventTrigger>
-                </Grid.Triggers>
+                            <!-- فوکوس → بالا -->
+                            <DataTrigger Binding="{Binding IsKeyboardFocused, ElementName=PasswordInput}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard Storyboard="{StaticResource PassUp}"/>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
 
+                            <!-- خالی + بدون فوکوس → پایین -->
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsKeyboardFocused, ElementName=PasswordInput}" Value="False"/>
+                                    <Condition Binding="{Binding Password, ElementName=PasswordInput}" Value=""/>
+                                </MultiDataTrigger.Conditions>
+                                <MultiDataTrigger.EnterActions>
+                                    <BeginStoryboard Storyboard="{StaticResource PassDown}"/>
+                                </MultiDataTrigger.EnterActions>
+                            </MultiDataTrigger>
+
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
             </Grid>
 
-            <!-- ============ LOGIN BUTTON ============ -->
+            <!-- LOGIN BUTTON -->
             <Button Content="Login"
                     Height="46"
                     Margin="0,25,0,0"
@@ -170,36 +188,7 @@
                     BorderBrush="#FFD84D"
                     BorderThickness="0"
                     Cursor="Hand"
-                    Command="{Binding LoginCommand}">
-                <Button.Style>
-                    <Style TargetType="Button">
-                        <Setter Property="Background" Value="#FFD84D"/>
-                        <Setter Property="Foreground" Value="#000"/>
-                        <Setter Property="BorderBrush" Value="#FFD84D"/>
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="root"
-                                            Background="{TemplateBinding Background}"
-                                            CornerRadius="8">
-                                        <ContentPresenter HorizontalAlignment="Center"
-                                                          VerticalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#FFE680"/>
-                            </Trigger>
-
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#FFC735"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
+                    Command="{Binding LoginCommand}"/>
 
             <TextBlock Text="{Binding ErrorMessage}"
                        Foreground="#FF5555"
@@ -207,7 +196,7 @@
                        TextWrapping="Wrap"
                        FontSize="14"
                        Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}"/>
-
         </StackPanel>
     </Grid>
+
 </Page>
