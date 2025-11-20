@@ -1,0 +1,51 @@
+name: Build FireNet
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore ./src/FireNet.UI/FireNet.UI.csproj
+
+    - name: Build
+      run: dotnet build ./src/FireNet.UI/FireNet.UI.csproj -c Release
+
+    - name: Publish Build
+      run: dotnet publish ./src/FireNet.UI/FireNet.UI.csproj -c Release -o ./release
+
+    # Add Xray-core files
+    - name: Add Xray-core
+      run: |
+        mkdir ./release/xray-core
+        copy ./xray-core\* ./release\xray-core\
+      shell: cmd
+
+    # Install Inno Setup via Chocolatey
+    - name: Install Inno Setup
+      run: choco install innosetup -y
+
+    # Build Installer
+    - name: Build Installer
+      run: iscc installer/fire-installer.iss
+
+    # Upload Installer Artifact (NEW v4)
+    - name: Upload Installer Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: FireNet-Installer
+        path: installer/output/
+        compression-level: 0
