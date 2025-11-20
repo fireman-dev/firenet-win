@@ -30,8 +30,8 @@ jobs:
     # Add Xray-core files
     - name: Add Xray-core
       run: |
-        mkdir ./release/xray-core
-        copy ./xray-core\* ./release\xray-core\
+        if not exist release\xray-core mkdir release\xray-core
+        xcopy xray-core\* release\xray-core\ /E /Y
       shell: cmd
 
     # Install Inno Setup via Chocolatey
