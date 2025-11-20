@@ -13,110 +13,98 @@ namespace FireNet.Core.Xray
         public event Action<string> OnLog;
         public event Action OnCrashed;
 
-        public XrayProcessManager()
+        public XrayProcessManager(string xrayDirectory)
         {
-            // مسیر پوشه xray-core
-            string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-            _xrayPath = Path.Combine(appData, "FireNet", "xray-core", "xray.exe");
-
-            if (!File.Exists(_xrayPath))
-                throw new FileNotFoundException("xray.exe not found in FireNet/xray-core/");
-        }
-
-        // -------------------------------------------------------
-        // اجرای Xray با config.json
-        // -------------------------------------------------------
-        public bool Start(string configFile)
-        {
-            if (!File.Exists(configFile))
-                throw new FileNotFoundException("config.json not found: " + configFile);
-
-            // اگر قبلاً اجراست
-            Stop();
+            _xrayPath = Path.Combine(xrayDirectory, "xray.exe");
 
             try
             {
-                var startInfo = new ProcessStartInfo
-                {
-                    FileName = _xrayPath,
-                    Arguments = $"-config \"{configFile}\"",
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardError = true,
-                    RedirectStandardOutput = true,
-                    WorkingDirectory = Path.GetDirectoryName(_xrayPath)
-                };
+                Directory.CreateDirectory("logs");
+            }
+            catch { }
+        }
 
-                _process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
+        public async Task StartAsync(string configPath)
+        {
+            try
+            {
+                File.AppendAllText("logs/xray.log",
+                    $"[Start] {DateTime.Now} → Starting Xray\nPath: {_xrayPath}\nConfig: {configPath}\n\n");
+
+                if (!File.Exists(_xrayPath))
+                {
+                    File.AppendAllText("logs/xray.log", "[ERROR] xray.exe not found!\n");
+                    throw new FileNotFoundException("xray.exe not found", _xrayPath);
+                }
+
+                if (!File.Exists(configPath))
+                {
+                    File.AppendAllText("logs/xray.log", "[ERROR] config.json not found!\n");
+                    throw new FileNotFoundException("config.json not found", configPath);
+                }
+
+                _process = new Process();
+                _process.StartInfo.FileName = _xrayPath;
+                _process.StartInfo.Arguments = $"run -c \"{configPath}\"";
+                _process.StartInfo.UseShellExecute = false;
+                _process.StartInfo.RedirectStandardOutput = true;
+                _process.StartInfo.RedirectStandardError = true;
+                _process.StartInfo.CreateNoWindow = true;
 
                 _process.OutputDataReceived += (s, e) =>
                 {
                     if (!string.IsNullOrEmpty(e.Data))
+                    {
+                        File.AppendAllText("logs/xray.log", "[OUT] " + e.Data + "\n");
                         OnLog?.Invoke(e.Data);
+                    }
                 };
 
                 _process.ErrorDataReceived += (s, e) =>
                 {
                     if (!string.IsNullOrEmpty(e.Data))
-                        OnLog?.Invoke("[ERROR] " + e.Data);
+                    {
+                        File.AppendAllText("logs/xray.log", "[ERR] " + e.Data + "\n");
+                        OnLog?.Invoke(e.Data);
+                    }
                 };
 
+                _process.EnableRaisingEvents = true;
                 _process.Exited += (s, e) =>
                 {
-                    if (_process.ExitCode != 0)
-                        OnCrashed?.Invoke();
+                    File.AppendAllText("logs/xray.log",
+                        $"[Crash] Xray exited unexpectedly at {DateTime.Now}\n");
+                    OnCrashed?.Invoke();
                 };
 
-                bool started = _process.Start();
-
+                _process.Start();
                 _process.BeginOutputReadLine();
                 _process.BeginErrorReadLine();
-
-                return started;
             }
             catch (Exception ex)
             {
-                OnLog?.Invoke("Failed to start Xray: " + ex.Message);
-                return false;
+                File.AppendAllText("logs/xray.log",
+                    $"[FATAL] Error starting Xray → {DateTime.Now}\n{ex}\n\n");
+                throw;
             }
         }
 
-        // -------------------------------------------------------
-        // توقف پروسه Xray
-        // -------------------------------------------------------
         public void Stop()
         {
             try
             {
                 if (_process != null && !_process.HasExited)
                 {
-                    _process.Kill(true);
-                    _process.Dispose();
+                    _process.Kill();
+                    File.AppendAllText("logs/xray.log",
+                        $"[Stop] Xray stopped at {DateTime.Now}\n\n");
                 }
             }
-            catch { }
-
-            _process = null;
-        }
-
-        // -------------------------------------------------------
-        // چک کردن اینکه آیا Xray در حال اجراست؟
-        // -------------------------------------------------------
-        public bool IsRunning()
-        {
-            return _process != null && !_process.HasExited;
-        }
-
-        // -------------------------------------------------------
-        // گرفتن PID
-        // -------------------------------------------------------
-        public int? GetPid()
-        {
-            if (_process != null && !_process.HasExited)
-                return _process.Id;
-
-            return null;
+            catch (Exception ex)
+            {
+                File.AppendAllText("logs/xray.log",
+                    $"[ERROR] Stop failed\n{ex}\n\n");
+            }
         }
     }
 }
