@@ -129,9 +129,7 @@ namespace FireNet.UI.ViewModels
         {
             _session = new SessionManager();
 
-            // آدرس پنل: اینجا باید همون دامنه لاگینت باشه
             _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
-
             _configBuilder = new XrayConfigBuilder();
             _xray = new XrayProcessManager();
 
@@ -144,7 +142,6 @@ namespace FireNet.UI.ViewModels
             LogoutCommand = new RelayCommand(async _ => await LogoutAsync());
             OpenSettingsCommand = new RelayCommand(_ => NavigationService.NavigateToSettings());
 
-            // اگر Xray کرش کرد → پروکسی سیستم رو پاک کن و وضعیت رو آپدیت کن
             _xray.OnCrashed += () =>
             {
                 SystemProxyManager.DisableProxy();
@@ -152,13 +149,14 @@ namespace FireNet.UI.ViewModels
                 ConnectionStatus = "Disconnected";
             };
 
-            LoadStatus();
+            // تغییر مهم: LoadStatus دیگر async void نیست → باید fire-and-forget صدا زده شود
+            _ = LoadStatus();
         }
 
         // -------------------------------------------------
         // Load /api/status
         // -------------------------------------------------
-        private async void LoadStatus()
+        private async Task LoadStatus()
         {
             try
             {
@@ -190,17 +188,16 @@ namespace FireNet.UI.ViewModels
             {
                 ErrorMessage = string.Empty;
 
-                // اگر در حال حاضر وصله → قطع اتصال
                 if (_xray.IsRunning)
                 {
                     SystemProxyManager.DisableProxy();
+
                     _xray.Stop();
                     IsConnected = false;
                     ConnectionStatus = "Disconnected";
                     return;
                 }
 
-                // اگر هنوز status نداریم
                 if (_status == null)
                 {
                     await LoadStatus();
@@ -214,10 +211,8 @@ namespace FireNet.UI.ViewModels
                 if (string.IsNullOrWhiteSpace(SelectedProfile))
                     throw new Exception("No server selected");
 
-                // ساخت کانفیگ Xray از لینک انتخابی
                 var configPath = _configBuilder.BuildConfig(new() { SelectedProfile! });
 
-                // متد Start قابل await نیست
                 _xray.Start(configPath);
 
                 SystemProxyManager.EnableSocksProxy(SocksHost, SocksPort);
@@ -225,7 +220,6 @@ namespace FireNet.UI.ViewModels
                 IsConnected = true;
                 ConnectionStatus = "Connected";
 
-                // keepalive loop
                 _ = Task.Run(async () =>
                 {
                     try
@@ -238,7 +232,6 @@ namespace FireNet.UI.ViewModels
                     }
                     catch
                     {
-                        // ignore
                     }
                 });
             }
@@ -261,7 +254,6 @@ namespace FireNet.UI.ViewModels
             {
                 ErrorMessage = string.Empty;
 
-                // اگر وصل بودیم → قطع اتصال و پاک کردن پروکسی
                 if (_xray.IsRunning)
                 {
                     SystemProxyManager.DisableProxy();
@@ -276,7 +268,6 @@ namespace FireNet.UI.ViewModels
                 return;
             }
 
-            // برگشت به صفحه لاگین
             NavigationService.NavigateToLogin();
         }
 
@@ -294,6 +285,7 @@ namespace FireNet.UI.ViewModels
             if (kb >= 1) return $"{kb:F2} KB";
             return $"{b} B";
         }
+
 
         private string UnixToDate(long ts)
         {
