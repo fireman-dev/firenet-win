@@ -7,7 +7,6 @@
     <Color x:Key="BorderColor">#FFDDDDDD</Color>
     <Color x:Key="ScrollThumbColor">#606060</Color>
 
-
     <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}"/>
     <SolidColorBrush x:Key="ForegroundBrush" Color="{StaticResource ForegroundColor}"/>
     <SolidColorBrush x:Key="CardBrush" Color="{StaticResource CardColor}"/>

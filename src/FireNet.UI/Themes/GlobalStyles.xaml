@@ -1,59 +1,54 @@
-<Style TargetType="ScrollBar">
-    <Setter Property="Width" Value="6"/>
-    <Setter Property="Margin" Value="0"/>
-    <Setter Property="Background" Value="Transparent"/>
-    <Setter Property="Template">
-        <Setter.Value>
-            <ControlTemplate TargetType="ScrollBar">
-                <Grid Background="Transparent">
-                    <Track x:Name="PART_Track"
-                           IsDirectionReversed="true">
+<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-                        <!-- Back -->
-                        <Track.DecreaseRepeatButton>
-                            <RepeatButton Command="ScrollBar.PageLeftCommand"
-                                          Background="Transparent"
-                                          BorderThickness="0"/>
-                        </Track.DecreaseRepeatButton>
+    <!-- ScrollBar Style -->
+    <Style TargetType="ScrollBar">
+        <Setter Property="Width" Value="6"/>
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid Background="Transparent">
+                        <Track x:Name="PART_Track"
+                               IsDirectionReversed="true">
 
-                        <!-- Thumb -->
-                        <Track.Thumb>
-                            <Thumb x:Name="Thumb"
-                                   Background="{DynamicResource ScrollThumbColor}"
-                                   BorderThickness="0"
-                                   Height="30"
-                                   CornerRadius="3"/>
-                        </Track.Thumb>
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Background="Transparent"
+                                              BorderThickness="0"/>
+                            </Track.DecreaseRepeatButton>
 
-                        <!-- Forward -->
-                        <Track.IncreaseRepeatButton>
-                            <RepeatButton Command="ScrollBar.PageRightCommand"
-                                          Background="Transparent"
-                                          BorderThickness="0"/>
-                        </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb x:Name="Thumb"
+                                       Background="{DynamicResource ScrollThumbColor}"
+                                       Height="30"
+                                       CornerRadius="3"/>
+                            </Track.Thumb>
 
-                    </Track>
-                </Grid>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Background="Transparent"
+                                              BorderThickness="0"/>
+                            </Track.IncreaseRepeatButton>
 
-                <!-- Visibility Rules -->
-                <ControlTemplate.Triggers>
+                        </Track>
+                    </Grid>
 
-                    <!-- Hidden By Default -->
-                    <Trigger Property="IsMouseOver" Value="False">
-                        <Setter TargetName="Thumb" Property="Opacity" Value="0.0"/>
-                    </Trigger>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="False">
+                            <Setter TargetName="Thumb" Property="Opacity" Value="0.0"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Thumb" Property="Opacity" Value="0.6"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
 
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter TargetName="Thumb" Property="Opacity" Value="0.6"/>
-                    </Trigger>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
-                    <!-- When scrolling -->
-                    <Trigger Property="IsEnabled" Value="False">
-                        <Setter Property="Opacity" Value="0"/>
-                    </Trigger>
-
-                </ControlTemplate.Triggers>
-            </ControlTemplate>
-        </Setter.Value>
-    </Setter>
-</Style>
+</ResourceDictionary>
