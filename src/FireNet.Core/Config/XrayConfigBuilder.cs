@@ -12,7 +12,6 @@ namespace FireNet.Core.Config
 
         public XrayConfigBuilder()
         {
-            // مسیر ذخیره فایل‌های کانفیگ
             _configRoot = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "FireNet",
@@ -23,9 +22,6 @@ namespace FireNet.Core.Config
                 Directory.CreateDirectory(_configRoot);
         }
 
-        // -----------------------------
-        // متد اصلی ساخت فایل کانفیگ
-        // -----------------------------
         public string BuildConfig(List<string> links)
         {
             var parsedLinks = new List<ServerLink>();
@@ -53,9 +49,6 @@ namespace FireNet.Core.Config
             return filePath;
         }
 
-        // -----------------------------
-        // پارس لینک‌ها
-        // -----------------------------
         private ServerLink ParseLink(string link)
         {
             if (link.StartsWith("vless://"))
@@ -70,9 +63,6 @@ namespace FireNet.Core.Config
             throw new Exception("Unsupported link type");
         }
 
-        // -----------------------------
-        // inbounds
-        // -----------------------------
         private object[] CreateInbounds()
         {
             return new object[]
@@ -93,9 +83,6 @@ namespace FireNet.Core.Config
             };
         }
 
-        // -----------------------------
-        // outbounds
-        // -----------------------------
         private List<object> CreateOutbounds(List<ServerLink> servers)
         {
             var result = new List<object>();
@@ -111,7 +98,6 @@ namespace FireNet.Core.Config
                 });
             }
 
-            // outbound مستقیم
             result.Add(new
             {
                 tag = "direct",
@@ -119,7 +105,6 @@ namespace FireNet.Core.Config
                 settings = new { }
             });
 
-            // outbound بلاک
             result.Add(new
             {
                 tag = "blocked",
@@ -130,14 +115,10 @@ namespace FireNet.Core.Config
             return result;
         }
 
-        // -----------------------------
-        // routing
-        // -----------------------------
         private object CreateRouting(List<ServerLink> servers)
         {
             var rules = new List<object>();
 
-            // بلاک تبلیغات
             rules.Add(new
             {
                 type = "field",
@@ -145,7 +126,6 @@ namespace FireNet.Core.Config
                 outboundTag = "blocked"
             });
 
-            // شبکه داخلی → direct
             rules.Add(new
             {
                 type = "field",
@@ -153,12 +133,13 @@ namespace FireNet.Core.Config
                 outboundTag = "direct"
             });
 
-            // باقی ترافیک → اولین سرور
+            // *** فیکس اصلی اینجاست ***
             if (servers.Count > 0)
             {
                 rules.Add(new
                 {
                     type = "field",
+                    network = "tcp,udp",
                     outboundTag = servers[0].Tag
                 });
             }
@@ -170,9 +151,6 @@ namespace FireNet.Core.Config
             };
         }
 
-        // -----------------------------
-        // dns
-        // -----------------------------
         private object CreateDns()
         {
             return new
