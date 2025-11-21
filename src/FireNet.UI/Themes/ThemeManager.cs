@@ -1,3 +1,6 @@
+using System;
+using System.Windows;
+
 namespace FireNet.UI.Theme
 {
     public static class ThemeManager
@@ -8,14 +11,16 @@ namespace FireNet.UI.Theme
         {
             CurrentTheme = theme;
 
-            App.Current.Resources.MergedDictionaries.Clear();
+            // پاک کردن Resourceهای قبلی
+            Application.Current.Resources.MergedDictionaries.Clear();
 
+            // لود کردن تم جدید
             var dict = new ResourceDictionary
             {
                 Source = new Uri($"Themes/{theme}.xaml", UriKind.Relative)
             };
 
-            App.Current.Resources.MergedDictionaries.Add(dict);
+            Application.Current.Resources.MergedDictionaries.Add(dict);
         }
     }
 }

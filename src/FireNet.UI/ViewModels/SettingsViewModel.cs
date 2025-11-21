@@ -88,7 +88,7 @@ namespace FireNet.UI.ViewModels
         // --------------------------------------------------
         private void ApplyTheme()
         {
-            ThemeManager.Apply(SelectedTheme);
+            ThemeManager.ApplyTheme(SelectedTheme);
         }
 
         // --------------------------------------------------
