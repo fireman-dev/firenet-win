@@ -4,9 +4,15 @@ using System.Text.Json;
 
 namespace FireNet.Core.Session
 {
-    public class SessionManager
+    public sealed class SessionManager
     {
+        private static readonly Lazy<SessionManager> _instance =
+            new(() => new SessionManager());
+
+        public static SessionManager Instance => _instance.Value;
+
         private readonly string _sessionPath;
+        private readonly string _crashLogPath;
 
         private class SessionFileModel
         {
@@ -14,94 +20,130 @@ namespace FireNet.Core.Session
             public long lastLogin { get; set; }
         }
 
-        public SessionManager()
+        private SessionManager()
         {
-            _sessionPath = Path.Combine(
+            string baseFolder = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "FireNet",
-                "session.json"
+                "FireNet"
             );
 
-            string folder = Path.GetDirectoryName(_sessionPath);
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
+            _sessionPath = Path.Combine(baseFolder, "session.json");
+            _crashLogPath = Path.Combine(baseFolder, "crash.log");
+
+            try
+            {
+                if (!Directory.Exists(baseFolder))
+                    Directory.CreateDirectory(baseFolder);
+            }
+            catch (Exception ex)
+            {
+                LogCrash("Failed creating session folder", ex);
+            }
         }
 
-        // -----------------------------------------------------
-        // ذخیره توکن JWT
-        // -----------------------------------------------------
+        // ----------------------------
+        // Save JWT token
+        // ----------------------------
         public void SaveToken(string token)
         {
-            var model = new SessionFileModel
+            try
             {
-                token = token,
-                lastLogin = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-            };
+                var model = new SessionFileModel
+                {
+                    token = token,
+                    lastLogin = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+                };
 
-            string json = JsonSerializer.Serialize(model, new JsonSerializerOptions
+                string json = JsonSerializer.Serialize(model, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+
+                File.WriteAllText(_sessionPath, json);
+            }
+            catch (Exception ex)
             {
-                WriteIndented = true
-            });
-
-            File.WriteAllText(_sessionPath, json);
+                LogCrash("SaveToken error", ex);
+            }
         }
 
-        // -----------------------------------------------------
-        // گرفتن توکن فعلی
-        // -----------------------------------------------------
+        // ----------------------------
+        // Read token
+        // ----------------------------
         public string GetToken()
         {
-            if (!File.Exists(_sessionPath))
-                return null;
-
             try
             {
+                if (!File.Exists(_sessionPath))
+                    return null;
+
                 string json = File.ReadAllText(_sessionPath);
                 var obj = JsonSerializer.Deserialize<SessionFileModel>(json);
-                return obj.token;
+
+                return obj?.token;
             }
-            catch
+            catch (Exception ex)
             {
+                LogCrash("GetToken error", ex);
                 return null;
             }
         }
 
-        // -----------------------------------------------------
-        // کاربر لاگین است؟
-        // -----------------------------------------------------
-        public bool IsLoggedIn()
-        {
-            string token = GetToken();
-            return !string.IsNullOrEmpty(token);
-        }
+        // ----------------------------
+        // Property → user is logged in?
+        // ----------------------------
+        public bool IsLoggedIn => !string.IsNullOrEmpty(GetToken());
 
-        // -----------------------------------------------------
-        // پاک کردن نشست
-        // -----------------------------------------------------
+        // ----------------------------
+        // Clear session
+        // ----------------------------
         public void ClearSession()
         {
-            if (File.Exists(_sessionPath))
-                File.Delete(_sessionPath);
-        }
-
-        // -----------------------------------------------------
-        // زمان آخرین لاگین برای تمدید نشست ۴۸ ساعته
-        // (اگر خواستی ازش استفاده کنی)
-        // -----------------------------------------------------
-        public long GetLastLoginTime()
-        {
-            if (!File.Exists(_sessionPath))
-                return 0;
-
             try
             {
+                if (File.Exists(_sessionPath))
+                    File.Delete(_sessionPath);
+            }
+            catch (Exception ex)
+            {
+                LogCrash("ClearSession error", ex);
+            }
+        }
+
+        // ----------------------------
+        // Last login time
+        // ----------------------------
+        public long GetLastLoginTime()
+        {
+            try
+            {
+                if (!File.Exists(_sessionPath))
+                    return 0;
+
                 string json = File.ReadAllText(_sessionPath);
                 var obj = JsonSerializer.Deserialize<SessionFileModel>(json);
-                return obj.lastLogin;
+                return obj?.lastLogin ?? 0;
+            }
+            catch (Exception ex)
+            {
+                LogCrash("GetLastLoginTime error", ex);
+                return 0;
+            }
+        }
+
+        // ----------------------------
+        // Crash logging
+        // ----------------------------
+        public void LogCrash(string title, Exception ex)
+        {
+            try
+            {
+                string log = $"[{DateTime.Now}] {title}\n{ex}\n-------------------------\n";
+                File.AppendAllText(_crashLogPath, log);
             }
             catch
             {
-                return 0;
+                // نمی‌ذاریم کرش جدید تولید بشه
             }
         }
     }

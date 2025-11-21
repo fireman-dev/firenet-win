@@ -7,13 +7,16 @@ namespace FireNet.UI.Navigation
     public static class NavigationService
     {
         private static Frame _frame;
-        private static readonly SessionManager _session = new SessionManager();
 
-        public static void SetFrame(Frame frame) => _frame = frame;
+        public static void SetFrame(Frame frame)
+        {
+            _frame = frame;
+        }
 
         public static void NavigateToLogin()
         {
-            if (_session.IsLoggedIn())
+            // جلوگیری از ورود به صفحه لاگین اگر کاربر لاگین است
+            if (SessionManager.Instance.IsLoggedIn)
                 return;
 
             _frame.Navigate(new LoginPage());

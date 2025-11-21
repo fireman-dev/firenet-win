@@ -7,20 +7,21 @@ namespace FireNet.UI
 {
     public partial class MainWindow : Window
     {
-        private readonly SessionManager _session = new SessionManager();
-
         public MainWindow()
         {
             InitializeComponent();
 
+            // تنظیم فریم ناوبری
             NavigationService.SetFrame(MainFrame);
 
-            if (_session.IsLoggedIn())
+            // جایگزین: حالا SessionManager Singleton است
+            if (SessionManager.Instance.IsLoggedIn)
                 NavigationService.NavigateToHome();
             else
                 NavigationService.NavigateToLogin();
         }
 
+        // جلوگیری از برگشت با Backspace
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             if (e.Key == Key.Back)
