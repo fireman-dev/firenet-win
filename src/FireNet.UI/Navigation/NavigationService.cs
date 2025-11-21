@@ -13,7 +13,7 @@ namespace FireNet.UI.Navigation
 
         public static void NavigateToLogin()
         {
-            if (_session.IsLoggedIn)
+            if (_session.IsLoggedIn())
                 return;
 
             _frame.Navigate(new LoginPage());

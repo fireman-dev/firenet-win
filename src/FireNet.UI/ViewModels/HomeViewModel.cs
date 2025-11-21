@@ -160,7 +160,7 @@ namespace FireNet.UI.ViewModels
         public HomeViewModel()
         {
             _session = new SessionManager();
-            _api = new PanelApiClient(_session, _session.PanelUrl);
+            _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
             _configBuilder = new XrayConfigBuilder();
             _xray = new XrayProcessManager();
 

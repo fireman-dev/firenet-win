@@ -15,7 +15,7 @@ namespace FireNet.UI
 
             NavigationService.SetFrame(MainFrame);
 
-            if (_session.IsLoggedIn)
+            if (_session.IsLoggedIn())
                 NavigationService.NavigateToHome();
             else
                 NavigationService.NavigateToLogin();
