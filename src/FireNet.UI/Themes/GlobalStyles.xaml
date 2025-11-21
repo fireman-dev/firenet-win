@@ -22,8 +22,7 @@
                             <Track.Thumb>
                                 <Thumb x:Name="Thumb"
                                        Background="{DynamicResource ScrollThumbColor}"
-                                       Height="30"
-                                       CornerRadius="3"/>
+                                       Height="30"/>
                             </Track.Thumb>
 
                             <Track.IncreaseRepeatButton>
