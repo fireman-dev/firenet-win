@@ -1,26 +1,35 @@
 using System.Windows;
+using System.Windows.Input;
 using FireNet.UI.Navigation;
-using FireNet.UI.Views;
 using FireNet.Core.Session;
 
 namespace FireNet.UI
 {
     public partial class MainWindow : Window
     {
-        private readonly SessionManager _session;
-
         public MainWindow()
         {
             InitializeComponent();
 
-            NavigationService.MainFrame = RootFrame;
-            _session = new SessionManager();
+            NavigationService.SetFrame(MainFrame);
 
-            // اگر از قبل توکن داشت → برو Home
-            if (_session.IsLoggedIn())
+            // هنگام باز شدن برنامه، اگر لاگین است → Home
+            if (SessionManager.Instance.IsLoggedIn)
                 NavigationService.NavigateToHome();
             else
                 NavigationService.NavigateToLogin();
+        }
+
+        // جلوگیری از Backspace Navigation
+        protected override void OnPreviewKeyDown(KeyEventArgs e)
+        {
+            if (e.Key == Key.Back)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            base.OnPreviewKeyDown(e);
         }
     }
 }

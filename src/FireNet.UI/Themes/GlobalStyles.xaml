@@ -1,0 +1,59 @@
+<Style TargetType="ScrollBar">
+    <Setter Property="Width" Value="6"/>
+    <Setter Property="Margin" Value="0"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Template">
+        <Setter.Value>
+            <ControlTemplate TargetType="ScrollBar">
+                <Grid Background="Transparent">
+                    <Track x:Name="PART_Track"
+                           IsDirectionReversed="true">
+
+                        <!-- Back -->
+                        <Track.DecreaseRepeatButton>
+                            <RepeatButton Command="ScrollBar.PageLeftCommand"
+                                          Background="Transparent"
+                                          BorderThickness="0"/>
+                        </Track.DecreaseRepeatButton>
+
+                        <!-- Thumb -->
+                        <Track.Thumb>
+                            <Thumb x:Name="Thumb"
+                                   Background="{DynamicResource ScrollThumbColor}"
+                                   BorderThickness="0"
+                                   Height="30"
+                                   CornerRadius="3"/>
+                        </Track.Thumb>
+
+                        <!-- Forward -->
+                        <Track.IncreaseRepeatButton>
+                            <RepeatButton Command="ScrollBar.PageRightCommand"
+                                          Background="Transparent"
+                                          BorderThickness="0"/>
+                        </Track.IncreaseRepeatButton>
+
+                    </Track>
+                </Grid>
+
+                <!-- Visibility Rules -->
+                <ControlTemplate.Triggers>
+
+                    <!-- Hidden By Default -->
+                    <Trigger Property="IsMouseOver" Value="False">
+                        <Setter TargetName="Thumb" Property="Opacity" Value="0.0"/>
+                    </Trigger>
+
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter TargetName="Thumb" Property="Opacity" Value="0.6"/>
+                    </Trigger>
+
+                    <!-- When scrolling -->
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0"/>
+                    </Trigger>
+
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+        </Setter.Value>
+    </Setter>
+</Style>

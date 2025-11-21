@@ -16,8 +16,7 @@ namespace FireNet.UI.ViewModels
     public class HomeViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
-        private void Set(string name) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        private void Set(string p) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
 
         // -------------------------------------------------
         // Bindings
@@ -74,10 +73,37 @@ namespace FireNet.UI.ViewModels
             }
         }
 
-        public ObservableCollection<string> Profiles { get; } = new();
+        // ------------------------------
+        // PING
+        // ------------------------------
 
-        private string? _selectedProfile;
-        public string? SelectedProfile
+        private string _pingText = "Ping: ---";
+        public string PingText
+        {
+            get => _pingText;
+            set
+            {
+                _pingText = value;
+                Set(nameof(PingText));
+            }
+        }
+
+        public ICommand RefreshPingCommand { get; }
+
+        // ------------------------------
+        // Profiles
+        // ------------------------------
+
+        public class ProfileItem
+        {
+            public string Remark { get; set; }
+            public string FullLink { get; set; }
+        }
+
+        public ObservableCollection<ProfileItem> Profiles { get; } = new();
+
+        private ProfileItem? _selectedProfile;
+        public ProfileItem? SelectedProfile
         {
             get => _selectedProfile;
             set
@@ -88,6 +114,9 @@ namespace FireNet.UI.ViewModels
             }
         }
 
+        // ------------------------------
+        // Error
+        // ------------------------------
         private string? _errorMessage;
         public string? ErrorMessage
         {
@@ -125,11 +154,13 @@ namespace FireNet.UI.ViewModels
         private const string SocksHost = "127.0.0.1";
         private const int SocksPort = 10808;
 
+        // -------------------------------------------------
+        // Constructor
+        // -------------------------------------------------
         public HomeViewModel()
         {
             _session = new SessionManager();
-
-            _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
+            _api = new PanelApiClient(_session, _session.PanelUrl);
             _configBuilder = new XrayConfigBuilder();
             _xray = new XrayProcessManager();
 
@@ -141,6 +172,7 @@ namespace FireNet.UI.ViewModels
             ConnectCommand = new RelayCommand(async _ => await ConnectOrDisconnect());
             LogoutCommand = new RelayCommand(async _ => await LogoutAsync());
             OpenSettingsCommand = new RelayCommand(_ => NavigationService.NavigateToSettings());
+            RefreshPingCommand = new RelayCommand(async _ => await MeasurePing());
 
             _xray.OnCrashed += () =>
             {
@@ -149,12 +181,12 @@ namespace FireNet.UI.ViewModels
                 ConnectionStatus = "Disconnected";
             };
 
-            // تغییر مهم: LoadStatus دیگر async void نیست → باید fire-and-forget صدا زده شود
             _ = LoadStatus();
         }
 
+
         // -------------------------------------------------
-        // Load /api/status
+        // Load Status (API)
         // -------------------------------------------------
         private async Task LoadStatus()
         {
@@ -162,13 +194,24 @@ namespace FireNet.UI.ViewModels
             {
                 _status = await _api.GetStatusAsync();
 
-                TrafficInfo =
-                    $"Used: {FormatBytes(_status.used_traffic)} / {FormatBytes(_status.data_limit)}";
-                ExpireInfo = $"Expire: {UnixToDate(_status.expire)}";
+                // حجم مصرف شده
+                TrafficInfo = $"حجم مصرف شده: {FormatBytes(_status.used_traffic)} از {FormatBytes(_status.data_limit)}";
 
+                // تعداد روز باقی‌مانده
+                var days = (DateTimeOffset.FromUnixTimeSeconds(_status.expire).ToLocalTime().Date - DateTime.Now.Date).TotalDays;
+                ExpireInfo = $"{Math.Max(0, (int)days)} روز باقی مانده";
+
+                // پروفایل‌ها
                 Profiles.Clear();
                 foreach (var link in _status.links)
-                    Profiles.Add(link);
+                {
+                    string remark = ExtractRemark(link);
+                    Profiles.Add(new ProfileItem
+                    {
+                        Remark = remark,
+                        FullLink = link
+                    });
+                }
 
                 if (Profiles.Count > 0)
                     SelectedProfile = Profiles[0];
@@ -179,6 +222,21 @@ namespace FireNet.UI.ViewModels
             }
         }
 
+
+        private string ExtractRemark(string raw)
+        {
+            try
+            {
+                int i = raw.IndexOf('#');
+                if (i != -1)
+                    return raw[(i + 1)..].Trim();
+            }
+            catch { }
+
+            return "Server";
+        }
+
+
         // -------------------------------------------------
         // Connect / Disconnect + System Proxy
         // -------------------------------------------------
@@ -186,13 +244,13 @@ namespace FireNet.UI.ViewModels
         {
             try
             {
-                ErrorMessage = string.Empty;
+                ErrorMessage = "";
 
                 if (_xray.IsRunning)
                 {
                     SystemProxyManager.DisableProxy();
-
                     _xray.Stop();
+
                     IsConnected = false;
                     ConnectionStatus = "Disconnected";
                     return;
@@ -202,18 +260,18 @@ namespace FireNet.UI.ViewModels
                 {
                     await LoadStatus();
                     if (_status == null)
-                        throw new Exception("No status data");
+                        throw new Exception("Failed to load server status");
                 }
 
                 if (_status.status != "active")
-                    throw new Exception("Account is not active");
+                    throw new Exception("اکانت فعال نیست");
 
-                if (string.IsNullOrWhiteSpace(SelectedProfile))
-                    throw new Exception("No server selected");
+                if (SelectedProfile == null)
+                    throw new Exception("هیچ سروری انتخاب نشده");
 
-                var configPath = _configBuilder.BuildConfig(new() { SelectedProfile! });
+                string cfg = _configBuilder.BuildConfig(new() { SelectedProfile.FullLink });
 
-                _xray.Start(configPath);
+                _xray.Start(cfg);
 
                 SystemProxyManager.EnableSocksProxy(SocksHost, SocksPort);
 
@@ -230,9 +288,7 @@ namespace FireNet.UI.ViewModels
                             await Task.Delay(30_000);
                         }
                     }
-                    catch
-                    {
-                    }
+                    catch { }
                 });
             }
             catch (Exception ex)
@@ -240,10 +296,10 @@ namespace FireNet.UI.ViewModels
                 SystemProxyManager.DisableProxy();
                 IsConnected = false;
                 ConnectionStatus = "Disconnected";
-
                 ErrorMessage = ex.Message;
             }
         }
+
 
         // -------------------------------------------------
         // Logout
@@ -252,7 +308,7 @@ namespace FireNet.UI.ViewModels
         {
             try
             {
-                ErrorMessage = string.Empty;
+                ErrorMessage = "";
 
                 if (_xray.IsRunning)
                 {
@@ -271,6 +327,33 @@ namespace FireNet.UI.ViewModels
             NavigationService.NavigateToLogin();
         }
 
+
+        // -------------------------------------------------
+        // Measure Ping (RealDelay)
+        // -------------------------------------------------
+        private async Task MeasurePing()
+        {
+            try
+            {
+                if (SelectedProfile == null)
+                {
+                    PingText = "Ping: ---";
+                    return;
+                }
+
+                PingText = "Ping: measuring...";
+
+                long delay = await RealDelayTester.MeasureAsync(SelectedProfile.FullLink);
+
+                PingText = delay <= 0 ? "Ping: timeout" : $"Ping: {delay}ms";
+            }
+            catch
+            {
+                PingText = "Ping: error";
+            }
+        }
+
+
         // -------------------------------------------------
         // Helpers
         // -------------------------------------------------
@@ -284,14 +367,6 @@ namespace FireNet.UI.ViewModels
             if (mb >= 1) return $"{mb:F2} MB";
             if (kb >= 1) return $"{kb:F2} KB";
             return $"{b} B";
-        }
-
-
-        private string UnixToDate(long ts)
-        {
-            return DateTimeOffset.FromUnixTimeSeconds(ts)
-                                 .ToLocalTime()
-                                 .ToString("yyyy/MM/dd");
         }
     }
 }

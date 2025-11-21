@@ -6,53 +6,70 @@
       mc:Ignorable="d"
       Title="Settings">
 
-    <!-- Padding → حذف شد / Margin جایگزین -->
-    <Grid Background="#111" Margin="30">
+    <Grid Background="{DynamicResource PageBackground}" Margin="30">
 
-        <StackPanel VerticalAlignment="Top">
+        <StackPanel VerticalAlignment="Top" Width="420">
 
+            <!-- HEADER -->
             <TextBlock Text="Settings"
-                       Foreground="White"
+                       Foreground="{DynamicResource TitleText}"
                        FontSize="34"
                        FontWeight="Bold"/>
 
             <TextBlock Text="{Binding VersionInfo}"
-                       Foreground="LightGray"
+                       Foreground="{DynamicResource SecondaryText}"
                        FontSize="16"
                        Margin="0,20,0,20"/>
 
+            <!-- THEME SWITCH -->
+            <TextBlock Text="Theme"
+                       Foreground="{DynamicResource TitleText}"
+                       FontSize="18"
+                       Margin="0,10,0,5"/>
+
+            <ComboBox ItemsSource="{Binding ThemeOptions}"
+                      SelectedItem="{Binding SelectedTheme}"
+                      Height="38"
+                      FontSize="14"
+                      Background="{DynamicResource InputBackground}"
+                      Foreground="{DynamicResource InputText}"
+                      Margin="0,5"/>
+
+            <Button Content="Apply Theme"
+                    Height="40"
+                    Margin="0,10"
+                    Command="{Binding ApplyThemeCommand}"
+                    Background="{DynamicResource Accent}"
+                    Foreground="White"/>
+
             <!-- FCM Token -->
+            <TextBlock Text="FCM Token"
+                       Foreground="{DynamicResource TitleText}"
+                       FontSize="18"
+                       Margin="0,25,0,5"/>
+
             <TextBox Text="{Binding FcmToken}"
                      Height="40"
                      FontSize="14"
                      Margin="0,5"
-                     Padding="10"/>
+                     Padding="10"
+                     Background="{DynamicResource InputBackground}"
+                     Foreground="{DynamicResource InputText}"/>
 
             <Button Content="Save FCM Token"
                     Height="40"
                     Margin="0,10"
-                    Command="{Binding SaveFcmCommand}"/>
+                    Command="{Binding SaveFcmCommand}"
+                    Background="{DynamicResource Accent}"
+                    Foreground="White"/>
 
-            <!-- Logout -->
+            <!-- LOGOUT -->
             <Button Content="Logout"
                     Background="#CC3333"
                     Foreground="White"
                     Height="40"
-                    Margin="0,20"
+                    Margin="0,30,0,0"
                     Command="{Binding LogoutCommand}"/>
-
-            <!-- LOGS -->
-            <TextBlock Text="Xray Logs"
-                       Margin="0,30,0,10"
-                       Foreground="White"
-                       FontSize="18"/>
-
-            <ScrollViewer Height="260" Background="#222">
-                <TextBlock Text="{Binding LogsText}"
-                           Foreground="LightGray"
-                           FontSize="13"
-                           TextWrapping="Wrap"/>
-            </ScrollViewer>
 
         </StackPanel>
     </Grid>

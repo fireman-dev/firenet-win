@@ -5,10 +5,26 @@ namespace FireNet.UI.Navigation
 {
     public static class NavigationService
     {
-        public static Frame MainFrame;
+        private static Frame _frame;
 
-        public static void NavigateToLogin() => MainFrame.Navigate(new LoginPage());
-        public static void NavigateToHome() => MainFrame.Navigate(new HomePage());
-        public static void NavigateToSettings() => MainFrame.Navigate(new SettingsPage());
+        public static void SetFrame(Frame frame) => _frame = frame;
+
+        public static void NavigateToLogin()
+        {
+            if (SessionManager.Instance.IsLoggedIn)
+                return;
+
+            _frame.Navigate(new LoginPage());
+        }
+
+        public static void NavigateToHome()
+        {
+            _frame.Navigate(new HomePage());
+        }
+
+        public static void NavigateToSettings()
+        {
+            _frame.Navigate(new SettingsPage());
+        }
     }
 }
