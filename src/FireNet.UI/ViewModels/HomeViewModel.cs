@@ -193,16 +193,14 @@ namespace FireNet.UI.ViewModels
                 // اگر در حال حاضر وصله → قطع اتصال
                 if (_xray.IsRunning)
                 {
-                    // اول پروکسی سیستم رو خاموش کن
                     SystemProxyManager.DisableProxy();
-
                     _xray.Stop();
                     IsConnected = false;
                     ConnectionStatus = "Disconnected";
                     return;
                 }
 
-                // اگر هنوز status نداریم، اول بگیریمش
+                // اگر هنوز status نداریم
                 if (_status == null)
                 {
                     await LoadStatus();
@@ -210,27 +208,24 @@ namespace FireNet.UI.ViewModels
                         throw new Exception("No status data");
                 }
 
-                // اگر اکانت تموم شده یا حجمت منقضی شده، خطا بده
                 if (_status.status != "active")
                     throw new Exception("Account is not active");
 
-                // شروع اتصال
                 if (string.IsNullOrWhiteSpace(SelectedProfile))
                     throw new Exception("No server selected");
 
                 // ساخت کانفیگ Xray از لینک انتخابی
                 var configPath = _configBuilder.BuildConfig(new() { SelectedProfile! });
 
-                // Start مقدار برنمی‌گردونه → فقط صداش می‌زنیم
+                // متد Start قابل await نیست
                 _xray.Start(configPath);
 
-                // فعال کردن system proxy روی socks5:10808
                 SystemProxyManager.EnableSocksProxy(SocksHost, SocksPort);
 
                 IsConnected = true;
                 ConnectionStatus = "Connected";
 
-                // KeepAlive در پس‌زمینه
+                // keepalive loop
                 _ = Task.Run(async () =>
                 {
                     try
@@ -243,13 +238,12 @@ namespace FireNet.UI.ViewModels
                     }
                     catch
                     {
-                        // خطاهای keepalive را نادیده می‌گیریم
+                        // ignore
                     }
                 });
             }
             catch (Exception ex)
             {
-                // اگر موقع کانکت خطا شد، مطمئن شو پروکسی سیستم خاموشه
                 SystemProxyManager.DisableProxy();
                 IsConnected = false;
                 ConnectionStatus = "Disconnected";
