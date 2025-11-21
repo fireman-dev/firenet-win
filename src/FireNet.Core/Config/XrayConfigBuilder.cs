@@ -10,6 +10,9 @@ namespace FireNet.Core.Config
     {
         private readonly string _configRoot;
 
+        private const string SocksHost = "127.0.0.1";
+        private const int SocksPort = 10808;
+
         public XrayConfigBuilder()
         {
             _configRoot = Path.Combine(
@@ -22,26 +25,46 @@ namespace FireNet.Core.Config
                 Directory.CreateDirectory(_configRoot);
         }
 
+        // -------------------------------------------------
+        // BuildConfig: links → server objects → json file
+        // -------------------------------------------------
         public string BuildConfig(List<string> links)
         {
+            if (links == null || links.Count == 0)
+                throw new ArgumentException("No links provided", nameof(links));
+
             var parsedLinks = new List<ServerLink>();
 
             foreach (var link in links)
+            {
+                if (string.IsNullOrWhiteSpace(link))
+                    continue;
+
                 parsedLinks.Add(ParseLink(link));
+            }
+
+            if (parsedLinks.Count == 0)
+                throw new Exception("No valid links found");
 
             var configObject = new
             {
                 log = new { loglevel = "warning" },
+
                 inbounds = CreateInbounds(),
+
                 outbounds = CreateOutbounds(parsedLinks),
+
                 routing = CreateRouting(parsedLinks),
+
                 dns = CreateDns()
             };
 
-            string json = JsonSerializer.Serialize(configObject, new JsonSerializerOptions
+            var options = new JsonSerializerOptions
             {
                 WriteIndented = true
-            });
+            };
+
+            string json = JsonSerializer.Serialize(configObject, options);
 
             string filePath = Path.Combine(_configRoot, $"{Guid.NewGuid()}.json");
             File.WriteAllText(filePath, json);
@@ -49,20 +72,26 @@ namespace FireNet.Core.Config
             return filePath;
         }
 
+        // -------------------------------------------------
+        // Parse a single link
+        // -------------------------------------------------
         private ServerLink ParseLink(string link)
         {
-            if (link.StartsWith("vless://"))
+            if (link.StartsWith("vless://", StringComparison.OrdinalIgnoreCase))
                 return ServerLink.ParseVless(link);
 
-            if (link.StartsWith("vmess://"))
+            if (link.StartsWith("vmess://", StringComparison.OrdinalIgnoreCase))
                 return ServerLink.ParseVmess(link);
 
-            if (link.StartsWith("trojan://"))
+            if (link.StartsWith("trojan://", StringComparison.OrdinalIgnoreCase))
                 return ServerLink.ParseTrojan(link);
 
             throw new Exception("Unsupported link type");
         }
 
+        // -------------------------------------------------
+        // Inbounds (SOCKS for system proxy)
+        // -------------------------------------------------
         private object[] CreateInbounds()
         {
             return new object[]
@@ -70,19 +99,29 @@ namespace FireNet.Core.Config
                 new
                 {
                     tag = "socks-in",
+                    port = SocksPort,
+                    listen = SocksHost,
                     protocol = "socks",
-                    listen = "127.0.0.1",
-                    port = 10808,
-                    settings = new { udp = true },
                     sniffing = new
                     {
                         enabled = true,
-                        destOverride = new [] {"http", "tls"}
+                        destOverride = new[] { "http", "tls" },
+                        routeOnly = false
+                    },
+                    settings = new
+                    {
+                        auth = "noauth",
+                        udp = true,
+                        ip = SocksHost,
+                        allowTransparent = false
                     }
                 }
             };
         }
 
+        // -------------------------------------------------
+        // Outbounds (servers + direct + blocked)
+        // -------------------------------------------------
         private List<object> CreateOutbounds(List<ServerLink> servers)
         {
             var result = new List<object>();
@@ -94,10 +133,16 @@ namespace FireNet.Core.Config
                     tag = s.Tag,
                     protocol = s.Protocol,
                     settings = s.Settings,
-                    streamSettings = s.StreamSettings
+                    streamSettings = s.StreamSettings,
+                    mux = new
+                    {
+                        enabled = false,
+                        concurrency = -1
+                    }
                 });
             }
 
+            // direct
             result.Add(new
             {
                 tag = "direct",
@@ -105,6 +150,7 @@ namespace FireNet.Core.Config
                 settings = new { }
             });
 
+            // blocked
             result.Add(new
             {
                 tag = "blocked",
@@ -115,10 +161,14 @@ namespace FireNet.Core.Config
             return result;
         }
 
+        // -------------------------------------------------
+        // Routing (ads → blocked, private/IR → direct, rest → first server)
+        // -------------------------------------------------
         private object CreateRouting(List<ServerLink> servers)
         {
             var rules = new List<object>();
 
+            // Ads → blocked
             rules.Add(new
             {
                 type = "field",
@@ -126,6 +176,15 @@ namespace FireNet.Core.Config
                 outboundTag = "blocked"
             });
 
+            // Private domains → direct
+            rules.Add(new
+            {
+                type = "field",
+                domain = new[] { "geosite:private" },
+                outboundTag = "direct"
+            });
+
+            // Private IPs → direct
             rules.Add(new
             {
                 type = "field",
@@ -133,28 +192,51 @@ namespace FireNet.Core.Config
                 outboundTag = "direct"
             });
 
-            // *** فیکس اصلی اینجاست ***
+            // IR domains → direct (if lists exist)
+            rules.Add(new
+            {
+                type = "field",
+                domain = new[] { "geosite:category-ir", "domain:ir" },
+                outboundTag = "direct"
+            });
+
+            // IR IPs → direct
+            rules.Add(new
+            {
+                type = "field",
+                ip = new[] { "geoip:ir" },
+                outboundTag = "direct"
+            });
+
+            // All other traffic → first server
             if (servers.Count > 0)
             {
                 rules.Add(new
                 {
                     type = "field",
-                    network = "tcp,udp",
+                    port = "0-65535",
                     outboundTag = servers[0].Tag
                 });
             }
 
             return new
             {
-                domainStrategy = "AsIs",
+                domainStrategy = "IPIfNonMatch",
                 rules = rules
             };
         }
 
+        // -------------------------------------------------
+        // DNS
+        // -------------------------------------------------
         private object CreateDns()
         {
             return new
             {
+                hosts = new
+                {
+                    // dns_google = "8.8.8.8"
+                },
                 servers = new object[]
                 {
                     "1.1.1.1",
