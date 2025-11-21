@@ -26,7 +26,6 @@ namespace FireNet.Core.Models
 
             var query = HttpUtility.ParseQueryString(uri.Query);
 
-            // Base fields
             string type = query["type"] ?? "tcp";
             string security = query["security"];
             string encryption = query["encryption"] ?? "none";
@@ -37,15 +36,13 @@ namespace FireNet.Core.Models
             string hostHeader = query["host"];
             string serviceName = query["serviceName"];
 
-            // ---------------------------
-            // AUTO TLS: real server requirement
-            // ---------------------------
+            // Auto TLS if port is 443
             if (string.IsNullOrWhiteSpace(security))
                 security = port == 443 ? "tls" : "none";
 
             // ---------------------------
-            // outbound settings (vnext)
-            ---------------------------
+            // OUTBOUND SETTINGS
+            // ---------------------------
             var settings = new
             {
                 vnext = new[]
@@ -66,77 +63,75 @@ namespace FireNet.Core.Models
             };
 
             // ---------------------------
-            // TCP FAKE HEADER REQUIRED?
-            ---------------------------
+            // TCP HEADER (FAKE HEADER)
+            // ---------------------------
             object tcpSettings = null;
 
-            if (type == "tcp")
-            {
-                // If no TLS and no WS/GRPC → must use fake header (soft97 style)
-                bool needFakeHeader =
-                    security == "none" &&
-                    query["type"] == null &&  // no explicit type
-                    query["header"] == null;  // no built-in header
+            bool needFakeHeader =
+                type == "tcp" &&
+                security == "none" &&
+                string.IsNullOrWhiteSpace(query["header"]);
 
-                if (needFakeHeader)
+            if (needFakeHeader)
+            {
+                tcpSettings = new
                 {
-                    tcpSettings = new
+                    header = new
                     {
-                        header = new
+                        type = "http",
+                        request = new
                         {
-                            type = "http",
-                            request = new
+                            version = "1.1",
+                            method = "GET",
+                            path = new[] { "/" },
+                            headers = new
                             {
-                                version = "1.1",
-                                method = "GET",
-                                path = new[] { "/" },
-                                headers = new
-                                {
-                                    Host = new[] { hostHeader ?? host },
-                                    Connection = new[] { "keep-alive" },
-                                    Pragma = "no-cache",
-                                    Accept = new[] { "*/*" },
-                                    ["Accept-Encoding"] = new[] { "gzip, deflate" }
-                                }
+                                Host = new[] { hostHeader ?? host },
+                                Connection = new[] { "keep-alive" },
+                                Pragma = "no-cache",
+                                Accept = new[] { "*/*" },
+                                ["Accept-Encoding"] = new[] { "gzip, deflate" }
                             }
                         }
-                    };
-                }
+                    }
+                };
             }
 
             // ---------------------------
-            // streamSettings
+            // STREAM SETTINGS
             // ---------------------------
             var stream = new
             {
                 network = type,
                 security = security,
 
-                // TLS
-                tlsSettings = security == "tls" ? new
-                {
-                    allowInsecure = true,
-                    serverName = !string.IsNullOrWhiteSpace(sni) ? sni : host,
-                    alpn = !string.IsNullOrWhiteSpace(alpn) ? alpn.Split(',') : null
-                } : null,
-
-                // WS
-                wsSettings = type == "ws" ? new
-                {
-                    path = path,
-                    headers = new
+                tlsSettings = security == "tls"
+                    ? new
                     {
-                        Host = hostHeader ?? host
+                        allowInsecure = true,
+                        serverName = !string.IsNullOrWhiteSpace(sni) ? sni : host,
+                        alpn = !string.IsNullOrWhiteSpace(alpn) ? alpn.Split(',') : null
                     }
-                } : null,
+                    : null,
 
-                // gRPC
-                grpcSettings = type == "grpc" ? new
-                {
-                    serviceName = serviceName
-                } : null,
+                wsSettings = type == "ws"
+                    ? new
+                    {
+                        path = path,
+                        headers = new
+                        {
+                            Host = hostHeader ?? host
+                        }
+                    }
+                    : null,
 
-                // TCP header
+                grpcSettings = type == "grpc"
+                    ? new
+                    {
+                        serviceName = serviceName
+                    }
+                    : null,
+
                 tcpSettings = tcpSettings
             };
 
@@ -148,7 +143,6 @@ namespace FireNet.Core.Models
                 StreamSettings = stream
             };
         }
-
 
         // -------------------------------------------------------
         // PARSE VMESS
@@ -167,7 +161,8 @@ namespace FireNet.Core.Models
                     new {
                         address = vm.add,
                         port = int.Parse(vm.port),
-                        users = new[] {
+                        users = new[]
+                        {
                             new {
                                 id = vm.id,
                                 alterId = 0,
@@ -182,14 +177,18 @@ namespace FireNet.Core.Models
             {
                 network = vm.net,
                 security = vm.tls != "none" ? "tls" : "none",
+
                 tlsSettings = vm.tls != "none"
-                    ? new {
+                    ? new
+                    {
                         serverName = vm.sni,
                         allowInsecure = true
                     }
                     : null,
+
                 wsSettings = vm.net == "ws"
-                    ? new {
+                    ? new
+                    {
                         path = vm.path,
                         headers = new { Host = vm.host }
                     }
@@ -204,7 +203,6 @@ namespace FireNet.Core.Models
                 StreamSettings = stream
             };
         }
-
 
         // -------------------------------------------------------
         // PARSE TROJAN
@@ -251,9 +249,10 @@ namespace FireNet.Core.Models
                         {
                             version = "1.1",
                             method = "GET",
-                            path = new [] { "/" },
-                            headers = new {
-                                Host = new [] { hostHeader ?? host }
+                            path = new[] { "/" },
+                            headers = new
+                            {
+                                Host = new[] { hostHeader ?? host }
                             }
                         }
                     }
@@ -272,7 +271,8 @@ namespace FireNet.Core.Models
                 },
 
                 wsSettings = type == "ws"
-                    ? new {
+                    ? new
+                    {
                         path = path,
                         headers = new { Host = hostHeader ?? host }
                     }
@@ -289,7 +289,6 @@ namespace FireNet.Core.Models
                 StreamSettings = stream
             };
         }
-
 
         // -------------------------------------------------------
         // VMESS MODEL
