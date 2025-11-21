@@ -135,7 +135,7 @@ namespace FireNet.UI.ViewModels
             _configBuilder = new XrayConfigBuilder();
             _xray = new XrayProcessManager();
 
-            IsConnected = _xray.IsRunning();
+            IsConnected = _xray.IsRunning;
             ConnectionStatus = IsConnected ? "Connected" : "Disconnected";
 
             AppVersion = $"v{Assembly.GetExecutingAssembly().GetName().Version}";
@@ -191,7 +191,7 @@ namespace FireNet.UI.ViewModels
                 ErrorMessage = string.Empty;
 
                 // اگر در حال حاضر وصله → قطع اتصال
-                if (_xray.IsRunning())
+                if (_xray.IsRunning)
                 {
                     // اول پروکسی سیستم رو خاموش کن
                     SystemProxyManager.DisableProxy();
@@ -202,6 +202,18 @@ namespace FireNet.UI.ViewModels
                     return;
                 }
 
+                // اگر هنوز status نداریم، اول بگیریمش
+                if (_status == null)
+                {
+                    await LoadStatus();
+                    if (_status == null)
+                        throw new Exception("No status data");
+                }
+
+                // اگر اکانت تموم شده یا حجمت منقضی شده، خطا بده
+                if (_status.status != "active")
+                    throw new Exception("Account is not active");
+
                 // شروع اتصال
                 if (string.IsNullOrWhiteSpace(SelectedProfile))
                     throw new Exception("No server selected");
@@ -209,9 +221,8 @@ namespace FireNet.UI.ViewModels
                 // ساخت کانفیگ Xray از لینک انتخابی
                 var configPath = _configBuilder.BuildConfig(new() { SelectedProfile! });
 
-                var ok = _xray.Start(configPath);
-                if (!ok)
-                    throw new Exception("Failed to start Xray");
+                // Start مقدار برنمی‌گردونه → فقط صداش می‌زنیم
+                _xray.Start(configPath);
 
                 // فعال کردن system proxy روی socks5:10808
                 SystemProxyManager.EnableSocksProxy(SocksHost, SocksPort);
@@ -224,7 +235,7 @@ namespace FireNet.UI.ViewModels
                 {
                     try
                     {
-                        while (_xray.IsRunning())
+                        while (_xray.IsRunning)
                         {
                             await _api.KeepAliveAsync();
                             await Task.Delay(30_000);
@@ -257,7 +268,7 @@ namespace FireNet.UI.ViewModels
                 ErrorMessage = string.Empty;
 
                 // اگر وصل بودیم → قطع اتصال و پاک کردن پروکسی
-                if (_xray.IsRunning())
+                if (_xray.IsRunning)
                 {
                     SystemProxyManager.DisableProxy();
                     _xray.Stop();

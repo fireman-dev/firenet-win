@@ -9,5 +9,6 @@ namespace FireNet.UI.Navigation
 
         public static void NavigateToLogin() => MainFrame.Navigate(new LoginPage());
         public static void NavigateToHome() => MainFrame.Navigate(new HomePage());
+        public static void NavigateToSettings() => MainFrame.Navigate(new SettingsPage());
     }
 }
