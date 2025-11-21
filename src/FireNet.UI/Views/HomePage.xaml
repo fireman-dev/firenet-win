@@ -6,65 +6,253 @@
       mc:Ignorable="d"
       Title="Home">
 
-    <Grid Background="#111">
+    <Grid Background="#0E0E0E">
         <Grid.RowDefinitions>
-            <RowDefinition Height="80"/>
+            <!-- Header -->
+            <RowDefinition Height="64"/>
+            <!-- Main content -->
             <RowDefinition Height="*"/>
+            <!-- Footer / version -->
+            <RowDefinition Height="28"/>
         </Grid.RowDefinitions>
 
-        <!-- Title -->
-        <TextBlock Text="FireNet"
-                   Foreground="White"
-                   FontSize="38"
-                   FontWeight="Bold"
+        <!-- HEADER -->
+        <Grid Grid.Row="0"
+              Margin="16,8,16,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Settings -->
+            <Button Grid.Column="0"
+                    Content="Settings"
+                    Command="{Binding OpenSettingsCommand}"
+                    Padding="16,6"
+                    Margin="0,8,0,0"
+                    FontSize="13"
+                    Background="#111"
+                    Foreground="#FFD84D"
+                    BorderBrush="#FFD84D"
+                    BorderThickness="1"
+                    Cursor="Hand">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border CornerRadius="14"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"
+                                                          Margin="6,0"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Style>
+            </Button>
+
+            <!-- Title -->
+            <TextBlock Grid.Column="1"
+                       Text="FireNet"
+                       Foreground="White"
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
+
+            <!-- Logout -->
+            <Button Grid.Column="2"
+                    Content="Logout"
+                    Command="{Binding LogoutCommand}"
+                    Padding="16,6"
+                    Margin="0,8,0,0"
+                    FontSize="13"
+                    Background="#FF5555"
+                    Foreground="White"
+                    BorderBrush="#FF5555"
+                    BorderThickness="1"
+                    Cursor="Hand">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border CornerRadius="14"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"
+                                                          Margin="6,0"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </Grid>
+
+        <!-- MAIN CONTENT -->
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel HorizontalAlignment="Center"
+                        Margin="0,20,0,0"
+                        Width="420">
+
+                <!-- CONNECTION TOGGLE BUTTON -->
+                <Button Command="{Binding ConnectCommand}"
+                        Width="140"
+                        Height="140"
+                        Margin="0,10,0,0"
+                        Cursor="Hand"
+                        Background="Transparent"
+                        BorderThickness="0">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Grid>
+                                <Ellipse x:Name="Circle"
+                                         Width="140"
+                                         Height="140"
+                                         Fill="#222"
+                                         Stroke="#20C997"
+                                         StrokeThickness="2"/>
+
+                                <StackPanel HorizontalAlignment="Center"
+                                            VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding ConnectionStatus}"
+                                               Foreground="#AAAAAA"
+                                               FontSize="13"
+                                               HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding ConnectButtonText}"
+                                               Foreground="#FFD84D"
+                                               FontWeight="SemiBold"
+                                               FontSize="18"
+                                               Margin="0,4,0,0"
+                                               HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <ControlTemplate.Triggers>
+
+                                <!-- حالت Connected -->
+                                <DataTrigger Binding="{Binding ConnectionStatus}" Value="Connected">
+                                    <Setter TargetName="Circle" Property="Fill" Value="#123C39"/>
+                                    <Setter TargetName="Circle" Property="Stroke" Value="#20C997"/>
+                                </DataTrigger>
+
+                                <!-- حالت Disconnected -->
+                                <DataTrigger Binding="{Binding ConnectionStatus}" Value="Disconnected">
+                                    <Setter TargetName="Circle" Property="Fill" Value="#252525"/>
+                                    <Setter TargetName="Circle" Property="Stroke" Value="#555"/>
+                                </DataTrigger>
+
+                                <!-- hover -->
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Circle" Property="StrokeThickness" Value="3"/>
+                                </Trigger>
+
+                                <!-- pressed -->
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Circle" Property="StrokeThickness" Value="4"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- TRAFFIC / EXPIRE INFO -->
+                <StackPanel Margin="0,18,0,0">
+                    <TextBlock Text="{Binding TrafficInfo}"
+                               Foreground="White"
+                               FontSize="14"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding ExpireInfo}"
+                               Foreground="#BBBBBB"
+                               FontSize="13"
+                               HorizontalAlignment="Center"
+                               Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- PROFILE LIST -->
+                <Border Margin="0,24,0,0"
+                        Padding="12"
+                        Background="#151515"
+                        BorderBrush="#333"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                    <StackPanel>
+                        <TextBlock Text="Servers"
+                                   Foreground="#FFD84D"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,6"/>
+
+                        <ListBox ItemsSource="{Binding Profiles}"
+                                 SelectedItem="{Binding SelectedProfile}"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Height="180"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,2"
+                                            Padding="8"
+                                            Background="#181818"
+                                            CornerRadius="6">
+                                        <TextBlock Text="{Binding}"
+                                                   Foreground="#CCFFFFFF"
+                                                   FontSize="13"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Margin" Value="0,2"/>
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Cursor" Value="Hand"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="#2034C9"/>
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#202020"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                        </ListBox>
+                    </StackPanel>
+                </Border>
+
+                <!-- ERROR MESSAGE -->
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="#FF5555"
+                           Margin="0,20,0,0"
+                           FontSize="13"
+                           TextWrapping="Wrap"
+                           Visibility="{Binding HasError,
+                                                Converter={StaticResource BoolToVisibility}}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- FOOTER / VERSION -->
+        <TextBlock Grid.Row="2"
+                   Text="{Binding AppVersion}"
+                   Foreground="#777"
+                   FontSize="11"
+                   HorizontalAlignment="Right"
                    VerticalAlignment="Center"
-                   Margin="25,0"/>
-
-        <!-- Main Content -->
-        <StackPanel Grid.Row="1"
-                    Margin="30"
-                    VerticalAlignment="Top">
-
-            <!-- Connection Status -->
-            <TextBlock Text="{Binding ConnectionStatus}"
-                       Foreground="White"
-                       FontSize="16"
-                       Margin="0,0,0,20"/>
-
-            <!-- Traffic -->
-            <TextBlock Text="{Binding TrafficInfo}"
-                       Foreground="White"
-                       FontSize="14"/>
-
-            <!-- Expire -->
-            <TextBlock Text="{Binding ExpireInfo}"
-                       Foreground="#BBBBBB"
-                       FontSize="14"
-                       Margin="0,10,0,20"/>
-
-            <!-- Server Selection -->
-            <ComboBox ItemsSource="{Binding Profiles}"
-                      SelectedItem="{Binding SelectedProfile}"
-                      Height="40"
-                      FontSize="16"
-                      Margin="0,10"/>
-
-            <!-- Connect / Disconnect -->
-            <Button Height="48"
-                    Margin="0,20,0,0"
-                    FontSize="18"
-                    Content="{Binding ConnectButtonText}"
-                    Command="{Binding ConnectCommand}"/>
-
-            <!-- Error message -->
-            <TextBlock Text="{Binding ErrorMessage}"
-                       Foreground="#FF4444"
-                       Margin="0,25,0,0"
-                       FontSize="14"
-                       TextWrapping="Wrap"
-                       Visibility="{Binding HasError,
-                                    Converter={StaticResource BoolToVisibility}}"/>
-
-        </StackPanel>
+                   Margin="0,0,12,0"/>
     </Grid>
 </Page>

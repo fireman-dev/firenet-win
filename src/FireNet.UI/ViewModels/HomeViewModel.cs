@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using FireNet.Core.Api;
@@ -8,38 +9,108 @@ using FireNet.Core.Api.Dto;
 using FireNet.Core.Config;
 using FireNet.Core.Session;
 using FireNet.Core.Xray;
-using System.IO;
+using FireNet.UI.Navigation;
 
 namespace FireNet.UI.ViewModels
 {
     public class HomeViewModel : INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
         private void Set(string name) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         // -------------------------------------------------
         // Bindings
         // -------------------------------------------------
-        public string ConnectionStatus { get; set; } = "Disconnected";
+
+        private string _connectionStatus = "Disconnected";
+        public string ConnectionStatus
+        {
+            get => _connectionStatus;
+            private set
+            {
+                if (_connectionStatus == value) return;
+                _connectionStatus = value;
+                Set(nameof(ConnectionStatus));
+            }
+        }
+
+        private bool _isConnected;
+        public bool IsConnected
+        {
+            get => _isConnected;
+            private set
+            {
+                if (_isConnected == value) return;
+                _isConnected = value;
+                Set(nameof(IsConnected));
+                Set(nameof(ConnectButtonText));
+            }
+        }
+
         public string ConnectButtonText => IsConnected ? "Disconnect" : "Connect";
-        public string TrafficInfo { get; set; }
-        public string ExpireInfo { get; set; }
 
-        public ObservableCollection<string> Profiles { get; set; }
-            = new ObservableCollection<string>();
+        private string? _trafficInfo;
+        public string? TrafficInfo
+        {
+            get => _trafficInfo;
+            private set
+            {
+                if (_trafficInfo == value) return;
+                _trafficInfo = value;
+                Set(nameof(TrafficInfo));
+            }
+        }
 
-        public string SelectedProfile { get; set; }
+        private string? _expireInfo;
+        public string? ExpireInfo
+        {
+            get => _expireInfo;
+            private set
+            {
+                if (_expireInfo == value) return;
+                _expireInfo = value;
+                Set(nameof(ExpireInfo));
+            }
+        }
 
-        public string ErrorMessage { get; set; }
+        public ObservableCollection<string> Profiles { get; } = new();
+
+        private string? _selectedProfile;
+        public string? SelectedProfile
+        {
+            get => _selectedProfile;
+            set
+            {
+                if (_selectedProfile == value) return;
+                _selectedProfile = value;
+                Set(nameof(SelectedProfile));
+            }
+        }
+
+        private string? _errorMessage;
+        public string? ErrorMessage
+        {
+            get => _errorMessage;
+            set
+            {
+                if (_errorMessage == value) return;
+                _errorMessage = value;
+                Set(nameof(ErrorMessage));
+                Set(nameof(HasError));
+            }
+        }
+
         public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
 
-        private bool IsConnected => _xray.IsRunning;
+        public string AppVersion { get; }
 
         // -------------------------------------------------
         // Commands
         // -------------------------------------------------
         public ICommand ConnectCommand { get; }
+        public ICommand LogoutCommand { get; }
+        public ICommand OpenSettingsCommand { get; }
 
         // -------------------------------------------------
         // Services
@@ -49,20 +120,37 @@ namespace FireNet.UI.ViewModels
         private readonly XrayConfigBuilder _configBuilder;
         private readonly XrayProcessManager _xray;
 
-        private StatusResponse _status;
+        private StatusResponse? _status;
+
+        private const string SocksHost = "127.0.0.1";
+        private const int SocksPort = 10808;
 
         public HomeViewModel()
         {
             _session = new SessionManager();
-            _api = new PanelApiClient(_session, "https://your-panel.com");
+
+            // آدرس پنل: اینجا باید همون دامنه لاگینت باشه
+            _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
+
             _configBuilder = new XrayConfigBuilder();
+            _xray = new XrayProcessManager();
 
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string xrayDir = Path.Combine(baseDir, "xray");
+            IsConnected = _xray.IsRunning();
+            ConnectionStatus = IsConnected ? "Connected" : "Disconnected";
 
-            _xray = new XrayProcessManager(xrayDir);
+            AppVersion = $"v{Assembly.GetExecutingAssembly().GetName().Version}";
 
-            ConnectCommand = new RelayCommand(async (_) => await ConnectOrDisconnect());
+            ConnectCommand = new RelayCommand(async _ => await ConnectOrDisconnect());
+            LogoutCommand = new RelayCommand(async _ => await LogoutAsync());
+            OpenSettingsCommand = new RelayCommand(_ => NavigationService.NavigateToSettings());
+
+            // اگر Xray کرش کرد → پروکسی سیستم رو پاک کن و وضعیت رو آپدیت کن
+            _xray.OnCrashed += () =>
+            {
+                SystemProxyManager.DisableProxy();
+                IsConnected = false;
+                ConnectionStatus = "Disconnected";
+            };
 
             LoadStatus();
         }
@@ -76,85 +164,115 @@ namespace FireNet.UI.ViewModels
             {
                 _status = await _api.GetStatusAsync();
 
-                TrafficInfo = $"Used: {FormatBytes(_status.used_traffic)} / {FormatBytes(_status.data_limit)}";
+                TrafficInfo =
+                    $"Used: {FormatBytes(_status.used_traffic)} / {FormatBytes(_status.data_limit)}";
                 ExpireInfo = $"Expire: {UnixToDate(_status.expire)}";
 
                 Profiles.Clear();
-                foreach (var l in _status.links)
-                    Profiles.Add(l);
+                foreach (var link in _status.links)
+                    Profiles.Add(link);
 
                 if (Profiles.Count > 0)
                     SelectedProfile = Profiles[0];
-
-                Set(nameof(TrafficInfo));
-                Set(nameof(ExpireInfo));
-                Set(nameof(Profiles));
-                Set(nameof(SelectedProfile));
             }
             catch (Exception ex)
             {
                 ErrorMessage = ex.Message;
-                Set(nameof(ErrorMessage));
-                Set(nameof(HasError));
             }
         }
 
         // -------------------------------------------------
-        // Connect / Disconnect
+        // Connect / Disconnect + System Proxy
         // -------------------------------------------------
         private async Task ConnectOrDisconnect()
         {
-            if (_xray.IsRunning)
-            {
-                _xray.Stop();
-
-                ConnectionStatus = "Disconnected";
-                Set(nameof(ConnectionStatus));
-                Set(nameof(ConnectButtonText));
-                return;
-            }
-
             try
             {
-                ErrorMessage = "";
-                Set(nameof(HasError));
-                Set(nameof(ErrorMessage));
+                ErrorMessage = string.Empty;
 
+                // اگر در حال حاضر وصله → قطع اتصال
+                if (_xray.IsRunning())
+                {
+                    // اول پروکسی سیستم رو خاموش کن
+                    SystemProxyManager.DisableProxy();
+
+                    _xray.Stop();
+                    IsConnected = false;
+                    ConnectionStatus = "Disconnected";
+                    return;
+                }
+
+                // شروع اتصال
                 if (string.IsNullOrWhiteSpace(SelectedProfile))
                     throw new Exception("No server selected");
 
-                string configPath = _configBuilder.BuildConfig(new() { SelectedProfile });
+                // ساخت کانفیگ Xray از لینک انتخابی
+                var configPath = _configBuilder.BuildConfig(new() { SelectedProfile! });
 
-                _xray.Start(configPath); // void → فقط اجرا می‌کنیم
-
-                if (!_xray.IsRunning)
+                var ok = _xray.Start(configPath);
+                if (!ok)
                     throw new Exception("Failed to start Xray");
 
-                ConnectionStatus = "Connected";
-                Set(nameof(ConnectionStatus));
-                Set(nameof(ConnectButtonText));
+                // فعال کردن system proxy روی socks5:10808
+                SystemProxyManager.EnableSocksProxy(SocksHost, SocksPort);
 
-                // KeepAlive background
+                IsConnected = true;
+                ConnectionStatus = "Connected";
+
+                // KeepAlive در پس‌زمینه
                 _ = Task.Run(async () =>
                 {
-                    while (_xray.IsRunning)
+                    try
                     {
-                        try
+                        while (_xray.IsRunning())
                         {
                             await _api.KeepAliveAsync();
+                            await Task.Delay(30_000);
                         }
-                        catch { }
-
-                        await Task.Delay(30_000);
+                    }
+                    catch
+                    {
+                        // خطاهای keepalive را نادیده می‌گیریم
                     }
                 });
             }
             catch (Exception ex)
             {
+                // اگر موقع کانکت خطا شد، مطمئن شو پروکسی سیستم خاموشه
+                SystemProxyManager.DisableProxy();
+                IsConnected = false;
+                ConnectionStatus = "Disconnected";
+
                 ErrorMessage = ex.Message;
-                Set(nameof(ErrorMessage));
-                Set(nameof(HasError));
             }
+        }
+
+        // -------------------------------------------------
+        // Logout
+        // -------------------------------------------------
+        private async Task LogoutAsync()
+        {
+            try
+            {
+                ErrorMessage = string.Empty;
+
+                // اگر وصل بودیم → قطع اتصال و پاک کردن پروکسی
+                if (_xray.IsRunning())
+                {
+                    SystemProxyManager.DisableProxy();
+                    _xray.Stop();
+                }
+
+                await _api.LogoutAsync();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = ex.Message;
+                return;
+            }
+
+            // برگشت به صفحه لاگین
+            NavigationService.NavigateToLogin();
         }
 
         // -------------------------------------------------
