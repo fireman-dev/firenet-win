@@ -67,8 +67,7 @@
 
             <StackPanel HorizontalAlignment="Center"
                         Width="420"
-                        Margin="0,20,0,0"
-                        Spacing="16">
+                        Margin="0,20,0,0">
 
 
                 <!-- ============================= -->
