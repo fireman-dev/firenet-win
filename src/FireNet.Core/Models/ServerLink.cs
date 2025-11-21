@@ -36,7 +36,6 @@ namespace FireNet.Core.Models
             string hostHeader = query["host"];
             string serviceName = query["serviceName"];
 
-            // Auto TLS if port is 443
             if (string.IsNullOrWhiteSpace(security))
                 security = port == 443 ? "tls" : "none";
 
@@ -50,8 +49,7 @@ namespace FireNet.Core.Models
                     new {
                         address = host,
                         port = port,
-                        users = new[]
-                        {
+                        users = new[] {
                             new {
                                 id = uuid,
                                 encryption = encryption,
@@ -63,7 +61,7 @@ namespace FireNet.Core.Models
             };
 
             // ---------------------------
-            // TCP HEADER (FAKE HEADER)
+            // TCP HEADER
             // ---------------------------
             object tcpSettings = null;
 
@@ -90,7 +88,7 @@ namespace FireNet.Core.Models
                                 Connection = new[] { "keep-alive" },
                                 Pragma = "no-cache",
                                 Accept = new[] { "*/*" },
-                                ["Accept-Encoding"] = new[] { "gzip, deflate" }
+                                AcceptEncoding = new[] { "gzip, deflate" }
                             }
                         }
                     }
@@ -144,6 +142,7 @@ namespace FireNet.Core.Models
             };
         }
 
+
         // -------------------------------------------------------
         // PARSE VMESS
         // -------------------------------------------------------
@@ -161,8 +160,7 @@ namespace FireNet.Core.Models
                     new {
                         address = vm.add,
                         port = int.Parse(vm.port),
-                        users = new[]
-                        {
+                        users = new[] {
                             new {
                                 id = vm.id,
                                 alterId = 0,
@@ -179,16 +177,11 @@ namespace FireNet.Core.Models
                 security = vm.tls != "none" ? "tls" : "none",
 
                 tlsSettings = vm.tls != "none"
-                    ? new
-                    {
-                        serverName = vm.sni,
-                        allowInsecure = true
-                    }
+                    ? new { serverName = vm.sni, allowInsecure = true }
                     : null,
 
                 wsSettings = vm.net == "ws"
-                    ? new
-                    {
+                    ? new {
                         path = vm.path,
                         headers = new { Host = vm.host }
                     }
@@ -203,6 +196,7 @@ namespace FireNet.Core.Models
                 StreamSettings = stream
             };
         }
+
 
         // -------------------------------------------------------
         // PARSE TROJAN
@@ -271,8 +265,7 @@ namespace FireNet.Core.Models
                 },
 
                 wsSettings = type == "ws"
-                    ? new
-                    {
+                    ? new {
                         path = path,
                         headers = new { Host = hostHeader ?? host }
                     }
@@ -289,6 +282,7 @@ namespace FireNet.Core.Models
                 StreamSettings = stream
             };
         }
+
 
         // -------------------------------------------------------
         // VMESS MODEL
