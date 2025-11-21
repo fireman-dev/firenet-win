@@ -17,9 +17,6 @@ namespace FireNet.Core.Models
         // -------------------------------------------------------
         public static ServerLink ParseVless(string link)
         {
-            // لینک نمونه:
-            // vless://UUID@host:port?security=tls&type=ws&path=%2Fwebsocket#NAME
-
             var uri = new Uri(link);
 
             string uuid = uri.UserInfo;
@@ -29,13 +26,25 @@ namespace FireNet.Core.Models
 
             var query = HttpUtility.ParseQueryString(uri.Query);
 
-            string security = query["security"] ?? "none";
+            string security = query["security"];
             string type = query["type"] ?? "tcp";
             string path = query["path"] ?? "/";
             string sni = query["sni"];
             string alpn = query["alpn"];
+            string hostHeader = query["host"];
+            string flow = query["flow"];
 
-            // تنظیمات outbound
+            // ------------------------------
+            // FIX 1: Auto TLS detection
+            // ------------------------------
+            if (string.IsNullOrWhiteSpace(security))
+            {
+                security = port == 443 ? "tls" : "none"; // AUTO TLS
+            }
+
+            // ------------------------------
+            // outbound settings
+            // ------------------------------
             var settings = new
             {
                 vnext = new[]
@@ -48,29 +57,34 @@ namespace FireNet.Core.Models
                             new {
                                 id = uuid,
                                 encryption = "none",
-                                flow = query["flow"]
+                                flow = flow
                             }
                         }
                     }
                 }
             };
 
+            // ------------------------------
             // streamSettings
+            // ------------------------------
             var stream = new
             {
                 network = type,
                 security = security,
+
                 tlsSettings = security == "tls" ? new
                 {
-                    serverName = sni,
-                    alpn = alpn != null ? alpn.Split(',') : null,
-                    allowInsecure = true
+                    allowInsecure = true,
+                    serverName = !string.IsNullOrWhiteSpace(sni) ? sni : host,
+                    alpn = !string.IsNullOrWhiteSpace(alpn) ? alpn.Split(',') : null
                 } : null,
+
                 wsSettings = type == "ws" ? new
                 {
                     path = path,
-                    headers = new { Host = query["host"] }
+                    headers = new { Host = hostHeader ?? host }
                 } : null,
+
                 grpcSettings = type == "grpc" ? new
                 {
                     serviceName = query["serviceName"]
