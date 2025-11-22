@@ -63,7 +63,7 @@ namespace FireNet.UI.ViewModels
 
         public SettingsViewModel()
         {
-            _session = new SessionManager();
+            _session = SessionManager.Instance;
             _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
 
             SaveFcmCommand = new RelayCommand(async _ => await SaveFcm());
@@ -88,7 +88,7 @@ namespace FireNet.UI.ViewModels
         // --------------------------------------------------
         private void ApplyTheme()
         {
-            ThemeManager.ApplyTheme(SelectedTheme);
+            ThemeManager.Apply(SelectedTheme);
         }
 
         // --------------------------------------------------

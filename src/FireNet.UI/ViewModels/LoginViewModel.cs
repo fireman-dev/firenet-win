@@ -36,7 +36,7 @@ namespace FireNet.UI.ViewModels
 
         public LoginViewModel()
         {
-            _session = new SessionManager();
+            _session = SessionManager.Instance;
             _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
 
             LoginCommand = new RelayCommand(async (_) => await LoginAsync());
