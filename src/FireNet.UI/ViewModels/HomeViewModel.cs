@@ -195,7 +195,7 @@ namespace FireNet.UI.ViewModels
                 _status = await _api.GetStatusAsync();
 
                 // حجم مصرف شده
-                TrafficInfo = $"حجم مصرف شده: {FormatBytes(_status.used_traffic)} از {FormatBytes(_status.data_limit)}";
+                TrafficInfo = $"{FormatBytes(_status.used_traffic)} / {FormatBytes(_status.data_limit)}";
 
                 // تعداد روز باقی‌مانده
                 var days = (DateTimeOffset
@@ -207,18 +207,25 @@ namespace FireNet.UI.ViewModels
 
                 // پروفایل‌ها
                 Profiles.Clear();
+
                 foreach (var link in _status.links)
                 {
                     string remark = ExtractRemark(link);
+
                     Profiles.Add(new ProfileItem
                     {
                         Remark = remark,
-                        FullLink = link
+                        FullLink = link,
+                        IsSelected = false,
+                        Size = 45  // سایز پایه
                     });
                 }
 
+                // انتخاب اولی
                 if (Profiles.Count > 0)
-                    SelectedProfile = Profiles[0];
+                {
+                    SelectProfile(Profiles[0]);
+                }
             }
             catch (Exception ex)
             {
@@ -357,6 +364,26 @@ namespace FireNet.UI.ViewModels
             }
         }
 
+        // -------------------------------------------------
+        // select profile
+        // -------------------------------------------------
+        public class ProfileItem
+        {
+            public string Remark { get; set; }
+            public string FullLink { get; set; }
+
+            // آیا این پروفایل انتخاب شده؟
+            public bool IsSelected { get; set; }
+
+            // سایز دایره
+            public double Size { get; set; }
+        }
+
+        public ICommand SelectProfileCommand => new RelayCommand(p =>
+        {
+            if (p is ProfileItem item)
+                SelectProfile(item);
+        });
 
         // -------------------------------------------------
         // Helpers

@@ -138,12 +138,29 @@ namespace FireNet.Core.Session
         {
             try
             {
-                string log = $"[{DateTime.Now}] {title}\n{ex}\n-------------------------\n";
-                File.AppendAllText(_crashLogPath, log);
+                string logEntry = $"[{DateTime.Now}] {title}\n{ex}\n-------------------------\n";
+
+                // اگر فایل وجود دارد: می‌خوانیم، خطوط را محدود می‌کنیم
+                if (File.Exists(_crashLogPath))
+                {
+                    var lines = File.ReadAllLines(_crashLogPath);
+
+                    // اگر بیشتر از 500 خط شد، از ابتدای فایل حذف کن تا برسد به 499
+                    if (lines.Length >= 500)
+                    {
+                        int removeCount = lines.Length - 499;
+                        var trimmed = new string[ lines.Length - removeCount ];
+                        Array.Copy(lines, removeCount, trimmed, 0, trimmed.Length);
+                        File.WriteAllLines(_crashLogPath, trimmed);
+                    }
+                }
+
+                // اضافه کردن لاگ جدید
+                File.AppendAllText(_crashLogPath, logEntry);
             }
             catch
             {
-                // نمی‌ذاریم کرش جدید تولید بشه
+                // خطا در لاگ گیری نباید باعث کرش بشه
             }
         }
     }

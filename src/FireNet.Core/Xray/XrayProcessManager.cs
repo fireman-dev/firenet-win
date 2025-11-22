@@ -53,18 +53,17 @@ namespace FireNet.Core.Xray
             {
                 var logPath = Path.Combine(AppContext.BaseDirectory, "logs", "xray.log");
 
-                File.AppendAllText(logPath,
-                    $"[Start] {DateTime.Now} → Starting Xray\nPath: {_xrayPath}\nConfig: {configPath}\n\n");
+                WriteXrayLog(output);
 
                 if (!File.Exists(_xrayPath))
                 {
-                    File.AppendAllText(logPath, "[ERROR] xray.exe not found!\n");
+                    WriteXrayLog(output);
                     throw new FileNotFoundException("xray.exe not found", _xrayPath);
                 }
 
                 if (!File.Exists(configPath))
                 {
-                    File.AppendAllText(logPath, "[ERROR] config.json not found!\n");
+                    WriteXrayLog(output);
                     throw new FileNotFoundException("config.json not found", configPath);
                 }
 
@@ -82,7 +81,7 @@ namespace FireNet.Core.Xray
                     {
                         try
                         {
-                            File.AppendAllText(logPath, "[OUT] " + e.Data + "\n");
+                            WriteXrayLog(output);
                         }
                         catch { }
 
@@ -96,7 +95,7 @@ namespace FireNet.Core.Xray
                     {
                         try
                         {
-                            File.AppendAllText(logPath, "[ERR] " + e.Data + "\n");
+                            WriteXrayLog(output);
                         }
                         catch { }
 
@@ -109,8 +108,7 @@ namespace FireNet.Core.Xray
                 {
                     try
                     {
-                        File.AppendAllText(logPath,
-                            $"[Crash] Xray exited at {DateTime.Now}\n");
+                        WriteXrayLog(output);
                     }
                     catch { }
 
@@ -126,8 +124,7 @@ namespace FireNet.Core.Xray
                 var logPath = Path.Combine(AppContext.BaseDirectory, "logs", "xray.log");
                 try
                 {
-                    File.AppendAllText(logPath,
-                        $"[FATAL] Error starting Xray → {DateTime.Now}\n{ex}\n\n");
+                    WriteXrayLog(output);
                 }
                 catch { }
 
@@ -157,18 +154,43 @@ namespace FireNet.Core.Xray
                 if (_process != null && !_process.HasExited)
                 {
                     _process.Kill();
-                    File.AppendAllText(logPath,
-                        $"[Stop] Xray stopped at {DateTime.Now}\n\n");
+                    WriteXrayLog(output);
                 }
             }
             catch (Exception ex)
             {
                 try
                 {
-                    File.AppendAllText(logPath,
-                        $"[ERROR] Stop failed\n{ex}\n\n");
+                    WriteXrayLog(output);
                 }
                 catch { }
+            }
+        }
+
+        private void WriteXrayLog(string text)
+        {
+            try
+            {
+                // اگر فایل وجود دارد، ابتدا خطوط را محدود کن
+                if (File.Exists(_xrayLogPath))
+                {
+                    var lines = File.ReadAllLines(_xrayLogPath);
+
+                    if (lines.Length >= 500)
+                    {
+                        int removeCount = lines.Length - 499;
+                        var trimmed = new string[lines.Length - removeCount];
+                        Array.Copy(lines, removeCount, trimmed, 0, trimmed.Length);
+                        File.WriteAllLines(_xrayLogPath, trimmed);
+                    }
+                }
+
+                // لاگ جدید را اضافه کن
+                File.AppendAllText(_xrayLogPath, text + Environment.NewLine);
+            }
+            catch
+            {
+                // خطای لاگ گیری نباید باعث کرش بشه
             }
         }
     }

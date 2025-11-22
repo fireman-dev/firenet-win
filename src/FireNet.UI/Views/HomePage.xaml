@@ -4,6 +4,8 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       mc:Ignorable="d"
+      Width="420"
+      Height="530"
       Background="{DynamicResource BackgroundBrush}">
 
     <Grid>
@@ -165,64 +167,58 @@
                 <!-- ============================= -->
                 <!-- LIST OF PROFILES (REMARK ONLY) -->
                 <!-- ============================= -->
-                <Border Background="{DynamicResource CardBrush}"
-                        Padding="12"
-                        BorderThickness="1"
-                        BorderBrush="{DynamicResource BorderBrush}"
-                        CornerRadius="10">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                            VerticalScrollBarVisibility="Disabled"
+                            Margin="0,20,0,0">
+                    <ItemsControl ItemsSource="{Binding Profiles}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
 
-                    <StackPanel>
-                        <TextBlock Text="Servers"
-                                   Foreground="#FFD84D"
-                                   FontSize="15"
-                                   FontWeight="SemiBold"
-                                   Margin="0,0,0,8"/>
+                        <ItemsControl.ItemContainerStyle>
+                            <Style TargetType="ContentPresenter">
+                                <Setter Property="Margin" Value="15,0,15,0"/>
+                            </Style>
+                        </ItemsControl.ItemContainerStyle>
 
-                        <ListBox ItemsSource="{Binding Profiles}"
-                                 SelectedItem="{Binding SelectedProfile}"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Height="200"
-                                 ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Vertical"
+                                    HorizontalAlignment="Center"
+                                    Cursor="Hand"
+                                    Margin="0"
+                                    MouseLeftButtonUp="{Binding DataContext.SelectProfileCommand, 
+                                            RelativeSource={RelativeSource AncestorType=Page}, 
+                                            Mode=OneWay, 
+                                            UpdateSourceTrigger=PropertyChanged}"
+                                    Tag="{Binding}">
 
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="#1A1A1A"
-                                            Padding="10"
-                                            CornerRadius="6"
-                                            Margin="0,3">
-                                        <TextBlock Text="{Binding Remark}"
-                                                   Foreground="{DynamicResource ForegroundBrush}"
-                                                   FontSize="14"
-                                                   TextTrimming="CharacterEllipsis"/>
+                                    <!-- دایره -->
+                                    <Border Width="{Binding Size}"
+                                            Height="{Binding Size}"
+                                            CornerRadius="{Binding Size, Converter={StaticResource HalfConverter}}"
+                                            BorderBrush="{Binding IsSelected, Converter={StaticResource BoolToColorConverter}}"
+                                            BorderThickness="3"
+                                            Background="{DynamicResource CardBrush}"
+                                            HorizontalAlignment="Center">
+
+                                        <Ellipse Fill="{DynamicResource ForegroundBrush}"/>
                                     </Border>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
 
-                            <ListBox.ItemContainerStyle>
-                                <Style TargetType="ListBoxItem">
-                                    <Setter Property="Padding" Value="0"/>
-                                    <Setter Property="Margin" Value="0,3"/>
-                                    <Setter Property="Cursor" Value="Hand"/>
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <!-- متن زیر دایره -->
+                                    <TextBlock Text="{Binding Remark}"
+                                            Foreground="{DynamicResource ForegroundBrush}"
+                                            FontSize="13"
+                                            HorizontalAlignment="Center"
+                                            Margin="0,6,0,0"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
 
-                                    <Style.Triggers>
-
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#222"/>
-                                        </Trigger>
-
-                                        <Trigger Property="IsSelected" Value="True">
-                                            <Setter Property="Background" Value="#283F5B"/>
-                                        </Trigger>
-
-                                    </Style.Triggers>
-                                </Style>
-                            </ListBox.ItemContainerStyle>
-
-                        </ListBox>
-                    </StackPanel>
-                </Border>
+                    </ItemsControl>
+                </ScrollViewer>
 
 
                 <!-- ============================= -->
