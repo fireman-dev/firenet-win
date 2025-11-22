@@ -98,6 +98,12 @@ namespace FireNet.UI.ViewModels
         {
             public string Remark { get; set; }
             public string FullLink { get; set; }
+
+            // انتخاب شده؟
+            public bool IsSelected { get; set; }
+
+            // سایز دایره
+            public double Size { get; set; }
         }
 
         public ObservableCollection<ProfileItem> Profiles { get; } = new();
@@ -140,6 +146,11 @@ namespace FireNet.UI.ViewModels
         public ICommand ConnectCommand { get; }
         public ICommand LogoutCommand { get; }
         public ICommand OpenSettingsCommand { get; }
+        public ICommand SelectProfileCommand => new RelayCommand(p =>
+        {
+            if (p is ProfileItem item)
+                SelectProfile(item);
+        });
 
         // -------------------------------------------------
         // Services
@@ -194,10 +205,10 @@ namespace FireNet.UI.ViewModels
             {
                 _status = await _api.GetStatusAsync();
 
-                // حجم مصرف شده
+                // نمایش حجم
                 TrafficInfo = $"{FormatBytes(_status.used_traffic)} / {FormatBytes(_status.data_limit)}";
 
-                // تعداد روز باقی‌مانده
+                // روز باقی‌مانده
                 var days = (DateTimeOffset
                     .FromUnixTimeSeconds(_status.expire)
                     .ToLocalTime()
@@ -205,7 +216,6 @@ namespace FireNet.UI.ViewModels
 
                 ExpireInfo = $"{Math.Max(0, (int)days)} روز باقی مانده";
 
-                // پروفایل‌ها
                 Profiles.Clear();
 
                 foreach (var link in _status.links)
@@ -217,15 +227,12 @@ namespace FireNet.UI.ViewModels
                         Remark = remark,
                         FullLink = link,
                         IsSelected = false,
-                        Size = 45  // سایز پایه
+                        Size = 45
                     });
                 }
 
-                // انتخاب اولی
                 if (Profiles.Count > 0)
-                {
                     SelectProfile(Profiles[0]);
-                }
             }
             catch (Exception ex)
             {
@@ -249,7 +256,27 @@ namespace FireNet.UI.ViewModels
 
 
         // -------------------------------------------------
-        // Connect / Disconnect + System Proxy
+        // Select Profile
+        // -------------------------------------------------
+        private void SelectProfile(ProfileItem item)
+        {
+            foreach (var p in Profiles)
+            {
+                p.IsSelected = false;
+                p.Size = 35;
+            }
+
+            item.IsSelected = true;
+            item.Size = 60;
+
+            SelectedProfile = item;
+
+            Set(nameof(Profiles));
+        }
+
+
+        // -------------------------------------------------
+        // Connect / Disconnect
         // -------------------------------------------------
         private async Task ConnectOrDisconnect()
         {
@@ -340,7 +367,7 @@ namespace FireNet.UI.ViewModels
 
 
         // -------------------------------------------------
-        // Measure Ping (RealDelay)
+        // Measure Ping
         // -------------------------------------------------
         private async Task MeasurePing()
         {
@@ -364,26 +391,6 @@ namespace FireNet.UI.ViewModels
             }
         }
 
-        // -------------------------------------------------
-        // select profile
-        // -------------------------------------------------
-        public class ProfileItem
-        {
-            public string Remark { get; set; }
-            public string FullLink { get; set; }
-
-            // آیا این پروفایل انتخاب شده؟
-            public bool IsSelected { get; set; }
-
-            // سایز دایره
-            public double Size { get; set; }
-        }
-
-        public ICommand SelectProfileCommand => new RelayCommand(p =>
-        {
-            if (p is ProfileItem item)
-                SelectProfile(item);
-        });
 
         // -------------------------------------------------
         // Helpers
