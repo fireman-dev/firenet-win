@@ -198,7 +198,11 @@ namespace FireNet.UI.ViewModels
                 TrafficInfo = $"حجم مصرف شده: {FormatBytes(_status.used_traffic)} از {FormatBytes(_status.data_limit)}";
 
                 // تعداد روز باقی‌مانده
-                var days = (DateTimeOffset.FromUnixTimeSeconds(_status.expire).ToLocalTime().Date - DateTime.Now.Date).TotalDays;
+                var days = (DateTimeOffset
+                    .FromUnixTimeSeconds(_status.expire)
+                    .ToLocalTime()
+                    .Date - DateTime.Now.Date).TotalDays;
+
                 ExpireInfo = $"{Math.Max(0, (int)days)} روز باقی مانده";
 
                 // پروفایل‌ها
