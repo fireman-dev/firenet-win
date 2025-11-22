@@ -1,6 +1,7 @@
 <ResourceDictionary 
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:FireNet.UI.Converters">
 
     <!-- ScrollBar Style -->
     <Style TargetType="ScrollBar">
@@ -50,12 +51,15 @@
         </Setter>
     </Style>
 
+    <!-- Border Colors -->
     <SolidColorBrush x:Key="SelectedBorderColor">#FF2E8BFF</SolidColorBrush>
     <SolidColorBrush x:Key="UnselectedBorderColor">#00000000</SolidColorBrush>
 
+    <!-- Converters -->
     <local:BoolToColorConverter x:Key="BoolToColorConverter"
                                 TrueBrush="{StaticResource SelectedBorderColor}"
-                                FalseBrush="{StaticResource UnselectedBorderColor}"/>
+                                FalseBrush="{StaticResource UnselectedBorderColor}" />
+
     <local:HalfConverter x:Key="HalfConverter" />
 
 </ResourceDictionary>
