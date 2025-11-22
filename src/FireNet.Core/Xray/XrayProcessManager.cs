@@ -9,61 +9,44 @@ namespace FireNet.Core.Xray
     {
         private Process _process;
         private readonly string _xrayPath;
+        private readonly string _xrayLogPath;
 
         public event Action<string> OnLog;
         public event Action OnCrashed;
 
-        /// <summary>
-        /// آیا پروسه‌ی Xray در حال اجراست؟
-        /// </summary>
         public bool IsRunning => _process != null && !_process.HasExited;
 
-        /// <summary>
-        /// سازنده‌ی بدون پارامتر (استفاده‌شده در ViewModel ها)
-        /// xray-core را کنار exe (پوشه‌ی برنامه) در نظر می‌گیرد.
-        /// </summary>
         public XrayProcessManager()
             : this(Path.Combine(AppContext.BaseDirectory, "xray-core"))
         {
         }
 
-        /// <summary>
-        /// سازنده با مسیر دایرکتوری xray-core
-        /// </summary>
         public XrayProcessManager(string xrayDirectory)
         {
             _xrayPath = Path.Combine(xrayDirectory, "xray.exe");
+            _xrayLogPath = Path.Combine(AppContext.BaseDirectory, "logs", "xray.log");
 
             try
             {
                 Directory.CreateDirectory(Path.Combine(AppContext.BaseDirectory, "logs"));
             }
-            catch
-            {
-                // ignore
-            }
+            catch { }
         }
 
-        /// <summary>
-        /// نسخه‌ی async برای استارت Xray با لاگ‌گیری
-        /// </summary>
+
         public Task StartAsync(string configPath)
         {
             try
             {
-                var logPath = Path.Combine(AppContext.BaseDirectory, "logs", "xray.log");
-
-                WriteXrayLog(output);
-
                 if (!File.Exists(_xrayPath))
                 {
-                    WriteXrayLog(output);
+                    WriteXrayLog("xray.exe not found");
                     throw new FileNotFoundException("xray.exe not found", _xrayPath);
                 }
 
                 if (!File.Exists(configPath))
                 {
-                    WriteXrayLog(output);
+                    WriteXrayLog("config.json not found");
                     throw new FileNotFoundException("config.json not found", configPath);
                 }
 
@@ -77,28 +60,18 @@ namespace FireNet.Core.Xray
 
                 _process.OutputDataReceived += (s, e) =>
                 {
-                    if (!string.IsNullOrEmpty(e.Data))
+                    if (!string.IsNullOrWhiteSpace(e.Data))
                     {
-                        try
-                        {
-                            WriteXrayLog(output);
-                        }
-                        catch { }
-
+                        WriteXrayLog(e.Data);
                         OnLog?.Invoke(e.Data);
                     }
                 };
 
                 _process.ErrorDataReceived += (s, e) =>
                 {
-                    if (!string.IsNullOrEmpty(e.Data))
+                    if (!string.IsNullOrWhiteSpace(e.Data))
                     {
-                        try
-                        {
-                            WriteXrayLog(output);
-                        }
-                        catch { }
-
+                        WriteXrayLog(e.Data);
                         OnLog?.Invoke(e.Data);
                     }
                 };
@@ -106,12 +79,7 @@ namespace FireNet.Core.Xray
                 _process.EnableRaisingEvents = true;
                 _process.Exited += (s, e) =>
                 {
-                    try
-                    {
-                        WriteXrayLog(output);
-                    }
-                    catch { }
-
+                    WriteXrayLog("Xray exited.");
                     OnCrashed?.Invoke();
                 };
 
@@ -121,57 +89,41 @@ namespace FireNet.Core.Xray
             }
             catch (Exception ex)
             {
-                var logPath = Path.Combine(AppContext.BaseDirectory, "logs", "xray.log");
-                try
-                {
-                    WriteXrayLog(output);
-                }
-                catch { }
-
+                WriteXrayLog($"Exception: {ex}");
                 throw;
             }
 
-            // چون کار async واقعی نداریم، فقط CompletedTask برمی‌گردانیم
             return Task.CompletedTask;
         }
 
-        /// <summary>
-        /// متد هم‌نام قدیمی که ViewModel ها از آن استفاده می‌کنند.
-        /// این متد فقط StartAsync را صدا می‌زند.
-        /// </summary>
+
         public void Start(string configPath)
         {
-            // fire-and-forget
             _ = StartAsync(configPath);
         }
 
+
         public void Stop()
         {
-            var logPath = Path.Combine(AppContext.BaseDirectory, "logs", "xray.log");
-
             try
             {
                 if (_process != null && !_process.HasExited)
                 {
                     _process.Kill();
-                    WriteXrayLog(output);
+                    WriteXrayLog("Xray stopped.");
                 }
             }
             catch (Exception ex)
             {
-                try
-                {
-                    WriteXrayLog(output);
-                }
-                catch { }
+                WriteXrayLog($"Stop Exception: {ex}");
             }
         }
+
 
         private void WriteXrayLog(string text)
         {
             try
             {
-                // اگر فایل وجود دارد، ابتدا خطوط را محدود کن
                 if (File.Exists(_xrayLogPath))
                 {
                     var lines = File.ReadAllLines(_xrayLogPath);
@@ -185,12 +137,10 @@ namespace FireNet.Core.Xray
                     }
                 }
 
-                // لاگ جدید را اضافه کن
                 File.AppendAllText(_xrayLogPath, text + Environment.NewLine);
             }
             catch
             {
-                // خطای لاگ گیری نباید باعث کرش بشه
             }
         }
     }
