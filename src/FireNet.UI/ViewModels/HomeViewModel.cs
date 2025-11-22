@@ -171,70 +171,62 @@ namespace FireNet.UI.ViewModels
         // -------------------------------------------------
         // Constructor
         // -------------------------------------------------
-
         public HomeViewModel()
         {
+            Log("HomeViewModel initialized");
+            
             _session = SessionManager.Instance;
-            _api = new PanelApiClient(_session,
-                "https://report.soft99.sbs:2053");
+            _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
             _configBuilder = new XrayConfigBuilder();
             _xray = new XrayProcessManager();
 
-            IsConnected = _xray.IsRunning;
-            ConnectionStatus = IsConnected
-                ? "Connected"
-                : "Disconnected";
+            Log("Services created");
 
-            AppVersion =
-                $"v{Assembly.GetExecutingAssembly().GetName().Version}";
-
-            ConnectCommand =
-                new RelayCommand(async _ => await ConnectOrDisconnect());
-            LogoutCommand =
-                new RelayCommand(async _ => await LogoutAsync());
-            OpenSettingsCommand =
-                new RelayCommand(_ => NavigationService.NavigateToSettings());
-            RefreshPingCommand =
-                new RelayCommand(async _ => await MeasurePing());
-
+            ...
+            
             _xray.OnCrashed += () =>
             {
-                SystemProxyManager.DisableProxy();
-                IsConnected = false;
-                ConnectionStatus = "Disconnected";
+                Log("Xray crashed event triggered");
+                ...
             };
 
+            Log("Calling LoadStatus()");
             _ = LoadStatus();
         }
+
 
         // -------------------------------------------------
         // Load Status
         // -------------------------------------------------
-
         private async Task LoadStatus()
         {
+            Log("LoadStatus started");
+
             try
             {
                 _status = await _api.GetStatusAsync();
+                Log("API GetStatusAsync OK");
 
-                TrafficInfo =
-                    $"{FormatBytes(_status.used_traffic)} / {FormatBytes(_status.data_limit)}";
+                Log($"used_traffic = {_status.used_traffic}");
+                Log($"data_limit   = {_status.data_limit}");
+                Log($"expire       = {_status.expire}");
+                Log($"links count  = {_status.links?.Count}");
 
-                var days =
-                    (DateTimeOffset.FromUnixTimeSeconds(_status.expire)
-                    .ToLocalTime()
-                    .Date - DateTime.Now.Date)
-                    .TotalDays;
+                TrafficInfo = $"{FormatBytes(_status.used_traffic)} / {FormatBytes(_status.data_limit)}";
+                Log($"TrafficInfo set: {TrafficInfo}");
 
-                ExpireInfo =
-                    $"{Math.Max(0, (int)days)} روز باقی مانده";
+                var days = (...)
+                ExpireInfo = $"{Math.Max(0, (int)days)} روز باقی مانده";
+                Log($"ExpireInfo set: {ExpireInfo}");
 
                 Profiles.Clear();
+                Log("Profiles cleared");
 
                 foreach (var link in _status.links)
                 {
-                    var remark = ExtractRemark(link);
+                    Log($"Import link: {link}");
 
+                    string remark = ExtractRemark(link);
                     Profiles.Add(new ProfileItem
                     {
                         Remark = remark,
@@ -242,13 +234,23 @@ namespace FireNet.UI.ViewModels
                         IsSelected = false,
                         Size = 45
                     });
+
+                    Log($"Profile Added: {remark}");
                 }
 
                 if (Profiles.Count > 0)
+                {
+                    Log("Selecting first profile");
                     SelectProfile(Profiles[0]);
+                }
+                else
+                {
+                    Log("Profiles count is ZERO!!");
+                }
             }
             catch (Exception ex)
             {
+                Log($"LoadStatus ERROR: {ex}");
                 ErrorMessage = ex.Message;
             }
         }
@@ -269,23 +271,32 @@ namespace FireNet.UI.ViewModels
         // -------------------------------------------------
         // Select Profile
         // -------------------------------------------------
-
         private void SelectProfile(ProfileItem item)
         {
-            foreach (var p in Profiles)
+            Log($"SelectProfile: {item?.Remark}");
+
+            try
             {
-                p.IsSelected = false;
-                p.Size = 35;
+                foreach (var p in Profiles)
+                {
+                    p.IsSelected = false;
+                    p.Size = 35;
+                }
+
+                item.IsSelected = true;
+                item.Size = 60;
+
+                SelectedProfile = item;
+                Log($"Profile selected OK: {item.Remark}");
+
+                Set(nameof(Profiles));
             }
-
-            item.IsSelected = true;
-            item.Size = 60;
-
-            SelectedProfile = item;
-
-            Set(nameof(Profiles));
+            catch (Exception ex)
+            {
+                Log($"SelectProfile ERROR: {ex}");
+            }
         }
-
+        
         // -------------------------------------------------
         // Connect / Disconnect
         // -------------------------------------------------
@@ -425,6 +436,21 @@ namespace FireNet.UI.ViewModels
             if (mb >= 1) return $"{mb:F2} MB";
             if (kb >= 1) return $"{kb:F2} KB";
             return $"{b} B";
+        }
+
+        private void Log(string msg)
+        {
+            try
+            {
+                string path = System.IO.Path.Combine(AppContext.BaseDirectory, "logs", "app.log");
+
+                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(path)))
+                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
+
+                string line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {msg}";
+                System.IO.File.AppendAllText(path, line + Environment.NewLine);
+            }
+            catch { }
         }
     }
 }
