@@ -186,14 +186,14 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Vertical"
-                                    HorizontalAlignment="Center"
-                                    Cursor="Hand"
-                                    Margin="0"
-                                    MouseLeftButtonUp="{Binding DataContext.SelectProfileCommand, 
-                                            RelativeSource={RelativeSource AncestorType=Page}, 
-                                            Mode=OneWay, 
-                                            UpdateSourceTrigger=PropertyChanged}"
-                                    Tag="{Binding}">
+                                            HorizontalAlignment="Center"
+                                            Cursor="Hand"
+                                            Margin="0"
+                                            MouseLeftButtonUp="{Binding DataContext.SelectProfileCommand, 
+                                                    RelativeSource={RelativeSource AncestorType=Page}, 
+                                                    Mode=OneWay, 
+                                                    UpdateSourceTrigger=PropertyChanged}"
+                                            Tag="{Binding}">
 
                                     <!-- دایره -->
                                     <Border Width="{Binding Size}"

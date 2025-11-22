@@ -1,17 +1,23 @@
 using System;
+using System.Globalization;
 using System.Windows.Data;
 
-public class HalfConverter : IValueConverter
+namespace FireNet.UI.Converters
 {
-    public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+    public class HalfConverter : IValueConverter
     {
-        if (value is double d)
-            return d / 2;
-        return 20;
-    }
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is double d)
+                return d / 2;
 
-    public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-    {
-        return null;
+            return 20;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return null;
+        }
     }
 }
+    

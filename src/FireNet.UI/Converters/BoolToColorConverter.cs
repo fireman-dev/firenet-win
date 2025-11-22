@@ -1,20 +1,24 @@
 using System;
+using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 
-public class BoolToColorConverter : IValueConverter
+namespace FireNet.UI.Converters
 {
-    public Brush TrueBrush { get; set; }
-    public Brush FalseBrush { get; set; }
-
-    public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+    public class BoolToColorConverter : IValueConverter
     {
-        bool val = value is bool b && b;
-        return val ? TrueBrush : FalseBrush;
-    }
+        public Brush TrueBrush { get; set; }
+        public Brush FalseBrush { get; set; }
 
-    public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-    {
-        return null;
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            bool val = value is bool b && b;
+            return val ? TrueBrush : FalseBrush;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return null;
+        }
     }
 }
