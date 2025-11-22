@@ -16,7 +16,8 @@ namespace FireNet.UI.ViewModels
     public class HomeViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
-        private void Set(string p) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
+        private void Set(string p) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
 
         // -------------------------------------------------
         // Bindings
@@ -47,7 +48,8 @@ namespace FireNet.UI.ViewModels
             }
         }
 
-        public string ConnectButtonText => IsConnected ? "Disconnect" : "Connect";
+        public string ConnectButtonText =>
+            IsConnected ? "Disconnect" : "Connect";
 
         private string? _trafficInfo;
         public string? TrafficInfo
@@ -98,11 +100,7 @@ namespace FireNet.UI.ViewModels
         {
             public string Remark { get; set; }
             public string FullLink { get; set; }
-
-            // انتخاب شده؟
             public bool IsSelected { get; set; }
-
-            // سایز دایره
             public double Size { get; set; }
         }
 
@@ -123,6 +121,7 @@ namespace FireNet.UI.ViewModels
         // ------------------------------
         // Error
         // ------------------------------
+
         private string? _errorMessage;
         public string? ErrorMessage
         {
@@ -136,25 +135,29 @@ namespace FireNet.UI.ViewModels
             }
         }
 
-        public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
+        public bool HasError =>
+            !string.IsNullOrWhiteSpace(ErrorMessage);
 
         public string AppVersion { get; }
 
         // -------------------------------------------------
         // Commands
         // -------------------------------------------------
+
         public ICommand ConnectCommand { get; }
         public ICommand LogoutCommand { get; }
         public ICommand OpenSettingsCommand { get; }
-        public ICommand SelectProfileCommand => new RelayCommand(p =>
-        {
-            if (p is ProfileItem item)
-                SelectProfile(item);
-        });
+        public ICommand SelectProfileCommand =>
+            new RelayCommand(p =>
+            {
+                if (p is ProfileItem item)
+                    SelectProfile(item);
+            });
 
         // -------------------------------------------------
         // Services
         // -------------------------------------------------
+
         private readonly SessionManager _session;
         private readonly PanelApiClient _api;
         private readonly XrayConfigBuilder _configBuilder;
@@ -168,22 +171,31 @@ namespace FireNet.UI.ViewModels
         // -------------------------------------------------
         // Constructor
         // -------------------------------------------------
+
         public HomeViewModel()
         {
             _session = SessionManager.Instance;
-            _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
+            _api = new PanelApiClient(_session,
+                "https://report.soft99.sbs:2053");
             _configBuilder = new XrayConfigBuilder();
             _xray = new XrayProcessManager();
 
             IsConnected = _xray.IsRunning;
-            ConnectionStatus = IsConnected ? "Connected" : "Disconnected";
+            ConnectionStatus = IsConnected
+                ? "Connected"
+                : "Disconnected";
 
-            AppVersion = $"v{Assembly.GetExecutingAssembly().GetName().Version}";
+            AppVersion =
+                $"v{Assembly.GetExecutingAssembly().GetName().Version}";
 
-            ConnectCommand = new RelayCommand(async _ => await ConnectOrDisconnect());
-            LogoutCommand = new RelayCommand(async _ => await LogoutAsync());
-            OpenSettingsCommand = new RelayCommand(_ => NavigationService.NavigateToSettings());
-            RefreshPingCommand = new RelayCommand(async _ => await MeasurePing());
+            ConnectCommand =
+                new RelayCommand(async _ => await ConnectOrDisconnect());
+            LogoutCommand =
+                new RelayCommand(async _ => await LogoutAsync());
+            OpenSettingsCommand =
+                new RelayCommand(_ => NavigationService.NavigateToSettings());
+            RefreshPingCommand =
+                new RelayCommand(async _ => await MeasurePing());
 
             _xray.OnCrashed += () =>
             {
@@ -195,32 +207,33 @@ namespace FireNet.UI.ViewModels
             _ = LoadStatus();
         }
 
+        // -------------------------------------------------
+        // Load Status
+        // -------------------------------------------------
 
-        // -------------------------------------------------
-        // Load Status (API)
-        // -------------------------------------------------
         private async Task LoadStatus()
         {
             try
             {
                 _status = await _api.GetStatusAsync();
 
-                // نمایش حجم
-                TrafficInfo = $"{FormatBytes(_status.used_traffic)} / {FormatBytes(_status.data_limit)}";
+                TrafficInfo =
+                    $"{FormatBytes(_status.used_traffic)} / {FormatBytes(_status.data_limit)}";
 
-                // روز باقی‌مانده
-                var days = (DateTimeOffset
-                    .FromUnixTimeSeconds(_status.expire)
+                var days =
+                    (DateTimeOffset.FromUnixTimeSeconds(_status.expire)
                     .ToLocalTime()
-                    .Date - DateTime.Now.Date).TotalDays;
+                    .Date - DateTime.Now.Date)
+                    .TotalDays;
 
-                ExpireInfo = $"{Math.Max(0, (int)days)} روز باقی مانده";
+                ExpireInfo =
+                    $"{Math.Max(0, (int)days)} روز باقی مانده";
 
                 Profiles.Clear();
 
                 foreach (var link in _status.links)
                 {
-                    string remark = ExtractRemark(link);
+                    var remark = ExtractRemark(link);
 
                     Profiles.Add(new ProfileItem
                     {
@@ -240,7 +253,6 @@ namespace FireNet.UI.ViewModels
             }
         }
 
-
         private string ExtractRemark(string raw)
         {
             try
@@ -254,10 +266,10 @@ namespace FireNet.UI.ViewModels
             return "Server";
         }
 
-
         // -------------------------------------------------
         // Select Profile
         // -------------------------------------------------
+
         private void SelectProfile(ProfileItem item)
         {
             foreach (var p in Profiles)
@@ -274,10 +286,10 @@ namespace FireNet.UI.ViewModels
             Set(nameof(Profiles));
         }
 
-
         // -------------------------------------------------
         // Connect / Disconnect
         // -------------------------------------------------
+
         private async Task ConnectOrDisconnect()
         {
             try
@@ -307,11 +319,14 @@ namespace FireNet.UI.ViewModels
                 if (SelectedProfile == null)
                     throw new Exception("هیچ سروری انتخاب نشده");
 
-                string cfg = _configBuilder.BuildConfig(new() { SelectedProfile.FullLink });
+                string cfg =
+                    _configBuilder.BuildConfig(new()
+                    { SelectedProfile.FullLink });
 
                 _xray.Start(cfg);
 
-                SystemProxyManager.EnableSocksProxy(SocksHost, SocksPort);
+                SystemProxyManager.EnableSocksProxy(
+                    SocksHost, SocksPort);
 
                 IsConnected = true;
                 ConnectionStatus = "Connected";
@@ -338,10 +353,10 @@ namespace FireNet.UI.ViewModels
             }
         }
 
-
         // -------------------------------------------------
         // Logout
         // -------------------------------------------------
+
         private async Task LogoutAsync()
         {
             try
@@ -365,10 +380,10 @@ namespace FireNet.UI.ViewModels
             NavigationService.NavigateToLogin();
         }
 
+        // -------------------------------------------------
+        // Ping
+        // -------------------------------------------------
 
-        // -------------------------------------------------
-        // Measure Ping
-        // -------------------------------------------------
         private async Task MeasurePing()
         {
             try
@@ -381,9 +396,14 @@ namespace FireNet.UI.ViewModels
 
                 PingText = "Ping: measuring...";
 
-                long delay = await RealDelayTester.MeasureAsync(SelectedProfile.FullLink);
+                var delay =
+                    await RealDelayTester.MeasureAsync(
+                        SelectedProfile.FullLink);
 
-                PingText = delay <= 0 ? "Ping: timeout" : $"Ping: {delay}ms";
+                PingText =
+                    delay <= 0
+                    ? "Ping: timeout"
+                    : $"Ping: {delay}ms";
             }
             catch
             {
@@ -391,10 +411,10 @@ namespace FireNet.UI.ViewModels
             }
         }
 
+        // -------------------------------------------------
+        // Utils
+        // -------------------------------------------------
 
-        // -------------------------------------------------
-        // Helpers
-        // -------------------------------------------------
         private string FormatBytes(long b)
         {
             double kb = b / 1024.0;
