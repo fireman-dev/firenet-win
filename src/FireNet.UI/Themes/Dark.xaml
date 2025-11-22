@@ -5,7 +5,9 @@
     <Color x:Key="ForegroundColor">#FFEFEFEF</Color>
     <Color x:Key="CardColor">#FF2B2B2B</Color>
     <Color x:Key="BorderColor">#FF3A3A3A</Color>
-    <Color x:Key="ScrollThumbColor">#AAAAAA</Color>
+
+    <!-- براش اسکرول‌بار -->
+    <SolidColorBrush x:Key="ScrollThumbColor" Color="#FFAAAAAA"/>
 
     <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}"/>
     <SolidColorBrush x:Key="ForegroundBrush" Color="{StaticResource ForegroundColor}"/>
