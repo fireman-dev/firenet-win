@@ -3,7 +3,26 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:FireNet.UI.Converters">
 
+    <!-- ============================= -->
+    <!-- REQUIRED GLOBAL BRUSHES -->
+    <!-- ============================= -->
+
+    <!-- پس‌زمینهٔ کل صفحات -->
+    <SolidColorBrush x:Key="BackgroundBrush" Color="#FF1E1E1E"/>
+
+    <!-- رنگ نوشته‌ها -->
+    <SolidColorBrush x:Key="ForegroundBrush" Color="#FFEFEFEF"/>
+
+    <!-- رنگ کارت‌ها / دایره‌ها -->
+    <SolidColorBrush x:Key="CardBrush" Color="#FF2A2A2A"/>
+
+    <!-- اسکرول‌بار -->
+    <SolidColorBrush x:Key="ScrollThumbColor" Color="#FF444444"/>
+
+
+    <!-- ============================= -->
     <!-- ScrollBar Style -->
+    <!-- ============================= -->
     <Style TargetType="ScrollBar">
         <Setter Property="Width" Value="6"/>
         <Setter Property="Margin" Value="0"/>
@@ -51,11 +70,17 @@
         </Setter>
     </Style>
 
+
+    <!-- ============================= -->
     <!-- Border Colors -->
+    <!-- ============================= -->
     <SolidColorBrush x:Key="SelectedBorderColor">#FF2E8BFF</SolidColorBrush>
     <SolidColorBrush x:Key="UnselectedBorderColor">#00000000</SolidColorBrush>
 
+
+    <!-- ============================= -->
     <!-- Converters -->
+    <!-- ============================= -->
     <local:BoolToColorConverter x:Key="BoolToColorConverter"
                                 TrueBrush="{StaticResource SelectedBorderColor}"
                                 FalseBrush="{StaticResource UnselectedBorderColor}" />
