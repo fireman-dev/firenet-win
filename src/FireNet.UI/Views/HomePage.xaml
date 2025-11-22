@@ -11,17 +11,13 @@
     <Grid>
 
         <Grid.RowDefinitions>
-            <!-- Header -->
             <RowDefinition Height="50"/>
-            <!-- Main content -->
             <RowDefinition Height="*"/>
-            <!-- Footer (version) -->
             <RowDefinition Height="32"/>
         </Grid.RowDefinitions>
 
-
         <!-- ============================= -->
-        <!-- HEADER (Settings Left / Logout Right) -->
+        <!-- HEADER -->
         <!-- ============================= -->
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
@@ -30,7 +26,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <!-- SETTINGS ICON -->
+            <!-- Settings -->
             <Button Grid.Column="0"
                     Background="Transparent"
                     BorderThickness="0"
@@ -40,16 +36,16 @@
                        Width="26" Height="26"/>
             </Button>
 
-            <!-- TITLE -->
-            <TextBlock Text="FireNet"
-                       Grid.Column="1"
+            <!-- Title -->
+            <TextBlock Grid.Column="1"
+                       Text="FireNet"
                        Foreground="{DynamicResource ForegroundBrush}"
                        FontSize="20"
                        FontWeight="SemiBold"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"/>
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"/>
 
-            <!-- LOGOUT ICON -->
+            <!-- Logout -->
             <Button Grid.Column="2"
                     Background="Transparent"
                     BorderThickness="0"
@@ -67,44 +63,40 @@
         <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto">
 
-            <StackPanel HorizontalAlignment="Center"
-                        Width="420"
-                        Margin="0,20,0,0">
+            <StackPanel Width="420"
+                        Margin="0,20,0,0"
+                        HorizontalAlignment="Center">
 
-
-                <!-- ============================= -->
-                <!-- TRAFFIC + REMAINING DAYS -->
-                <!-- ============================= -->
+                <!-- Traffic -->
                 <TextBlock Text="{Binding TrafficInfo}"
                            Foreground="{DynamicResource ForegroundBrush}"
                            FontSize="16"
                            HorizontalAlignment="Center"/>
 
+                <!-- Expire -->
                 <TextBlock Text="{Binding ExpireInfo}"
                            Foreground="{DynamicResource ForegroundBrush}"
                            FontSize="15"
-                           HorizontalAlignment="Center"
-                           Opacity="0.8"/>
+                           Opacity="0.8"
+                           HorizontalAlignment="Center"/>
 
-
-                <!-- ============================= -->
-                <!-- CONNECT / DISCONNECT CIRCLE BUTTON -->
-                <!-- ============================= -->
+                <!-- CONNECT BUTTON -->
                 <Button Command="{Binding ConnectCommand}"
-                        Width="150" Height="150"
                         Background="Transparent"
                         BorderThickness="0"
-                        Cursor="Hand">
+                        Cursor="Hand"
+                        Width="150" Height="150">
+
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Grid>
+
                                 <Ellipse x:Name="Circle"
                                          Width="150"
                                          Height="150"
                                          Fill="#202020"
                                          Stroke="#555"
-                                         StrokeThickness="3"
-                                         RenderOptions.EdgeMode="Aliased"/>
+                                         StrokeThickness="3"/>
 
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="{Binding ConnectionStatus}"
@@ -117,20 +109,21 @@
                                                FontWeight="SemiBold"
                                                HorizontalAlignment="Center"/>
                                 </StackPanel>
+
                             </Grid>
 
                             <ControlTemplate.Triggers>
 
-                                <!-- CONNECTED -->
+                                <!-- Connected -->
                                 <DataTrigger Binding="{Binding ConnectionStatus}" Value="Connected">
-                                    <Setter TargetName="Circle" Property="Fill" Value="#0A332E"/>
                                     <Setter TargetName="Circle" Property="Stroke" Value="#21D4A8"/>
+                                    <Setter TargetName="Circle" Property="Fill" Value="#0A332E"/>
                                 </DataTrigger>
 
-                                <!-- DISCONNECTED -->
+                                <!-- Disconnected -->
                                 <DataTrigger Binding="{Binding ConnectionStatus}" Value="Disconnected">
-                                    <Setter TargetName="Circle" Property="Fill" Value="#252525"/>
                                     <Setter TargetName="Circle" Property="Stroke" Value="#444"/>
+                                    <Setter TargetName="Circle" Property="Fill" Value="#252525"/>
                                 </DataTrigger>
 
                                 <!-- Hover -->
@@ -146,17 +139,16 @@
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
+
                 </Button>
 
 
-                <!-- ============================= -->
-                <!--  PING TEXT  (CLICKABLE) -->
-                <!-- ============================= -->
+                <!-- Ping -->
                 <TextBlock Text="{Binding PingText}"
                            Foreground="{DynamicResource ForegroundBrush}"
                            FontSize="15"
-                           Cursor="Hand"
-                           HorizontalAlignment="Center">
+                           HorizontalAlignment="Center"
+                           Cursor="Hand">
                     <TextBlock.InputBindings>
                         <MouseBinding MouseAction="LeftClick"
                                       Command="{Binding RefreshPingCommand}"/>
@@ -165,11 +157,12 @@
 
 
                 <!-- ============================= -->
-                <!-- LIST OF PROFILES (REMARK ONLY) -->
+                <!-- PROFILES LIST -->
                 <!-- ============================= -->
                 <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                            VerticalScrollBarVisibility="Disabled"
-                            Margin="0,20,0,0">
+                              VerticalScrollBarVisibility="Disabled"
+                              Margin="0,20,0,0">
+
                     <ItemsControl ItemsSource="{Binding Profiles}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -185,17 +178,15 @@
 
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
+
                                 <StackPanel Orientation="Vertical"
                                             HorizontalAlignment="Center"
                                             Cursor="Hand"
-                                            Margin="0"
-                                            MouseLeftButtonUp="{Binding DataContext.SelectProfileCommand, 
-                                                    RelativeSource={RelativeSource AncestorType=Page}, 
-                                                    Mode=OneWay, 
-                                                    UpdateSourceTrigger=PropertyChanged}"
+                                            MouseLeftButtonUp="{Binding DataContext.SelectProfileCommand,
+                                                RelativeSource={RelativeSource AncestorType=Page}}"
                                             Tag="{Binding}">
 
-                                    <!-- دایره -->
+                                    <!-- PROFILE CIRCLE -->
                                     <Border Width="{Binding Size}"
                                             Height="{Binding Size}"
                                             CornerRadius="{Binding Size, Converter={StaticResource HalfConverter}}"
@@ -207,46 +198,45 @@
                                         <Ellipse Fill="{DynamicResource ForegroundBrush}"/>
                                     </Border>
 
-                                    <!-- متن زیر دایره -->
+                                    <!-- REMARK -->
                                     <TextBlock Text="{Binding Remark}"
-                                            Foreground="{DynamicResource ForegroundBrush}"
-                                            FontSize="13"
-                                            HorizontalAlignment="Center"
-                                            Margin="0,6,0,0"/>
+                                               Foreground="{DynamicResource ForegroundBrush}"
+                                               FontSize="13"
+                                               HorizontalAlignment="Center"
+                                               Margin="0,6,0,0"/>
+
                                 </StackPanel>
+
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
 
                     </ItemsControl>
+
                 </ScrollViewer>
 
 
-                <!-- ============================= -->
-                <!-- ERROR MESSAGE -->
-                <!-- ============================= -->
+                <!-- Error -->
                 <TextBlock Text="{Binding ErrorMessage}"
                            Foreground="#FF5555"
                            FontSize="14"
-                           TextWrapping="Wrap"
+                           Margin="0,10,0,0"
                            Visibility="{Binding HasError,
-                                        Converter={StaticResource BoolToVisibility}}"
-                           Margin="0,10,0,0"/>
+                               Converter={StaticResource BoolToVisibility}}"/>
 
             </StackPanel>
 
         </ScrollViewer>
 
 
-        <!-- ============================= -->
-        <!-- VERSION BOTTOM CENTER -->
-        <!-- ============================= -->
+        <!-- VERSION -->
         <TextBlock Grid.Row="2"
                    Text="{Binding AppVersion}"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
                    Foreground="{DynamicResource ForegroundBrush}"
+                   FontSize="13"
                    Opacity="0.6"
-                   FontSize="13"/>
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Center"/>
+
     </Grid>
 
 </Page>
