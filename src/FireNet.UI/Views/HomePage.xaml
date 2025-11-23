@@ -218,11 +218,10 @@
                                                 Background="Transparent"
                                                 HorizontalAlignment="Center">
 
-                                            <Image Source="/Assets/Icons/server.png"
-                                                   Stretch="Uniform"
-                                                   Width="{Binding Size}"
-                                                   Height="{Binding Size}"/>
-
+                                            <Image Source="pack://siteoforigin:,,,/Assets/Icons/server.png"
+                                                Stretch="Uniform"
+                                                Width="{Binding Size}"
+                                                Height="{Binding Size}"/>
                                         </Border>
 
                                         <!-- REMARK -->
