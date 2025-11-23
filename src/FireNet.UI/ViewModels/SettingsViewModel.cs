@@ -55,6 +55,9 @@ namespace FireNet.UI.ViewModels
         public ICommand LogoutCommand { get; }
         public ICommand ApplyThemeCommand { get; }
 
+        // Command برگشت به صفحه اصلی (برای دکمه Back در SettingsPage)
+        public ICommand NavigateHomeCommand { get; }
+
         // -----------------------------
         // Services
         // -----------------------------
@@ -69,6 +72,9 @@ namespace FireNet.UI.ViewModels
             SaveFcmCommand = new RelayCommand(async _ => await SaveFcm());
             LogoutCommand = new RelayCommand(async _ => await Logout());
             ApplyThemeCommand = new RelayCommand(_ => ApplyTheme());
+
+            // دکمه Back → صفحه Home
+            NavigateHomeCommand = new RelayCommand(_ => NavigationService.NavigateToHome());
         }
 
         // --------------------------------------------------
