@@ -105,6 +105,8 @@ namespace FireNet.UI.ViewModels
 
                 await _api.LoginAsync(req);
 
+                HomeViewModel.Instance.ResetStateAfterLogin();
+                
                 // اگر لاگین موفق شد، میریم صفحه Home
                 NavigationService.NavigateToHome();
             }

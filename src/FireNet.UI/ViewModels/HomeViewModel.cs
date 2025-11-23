@@ -536,5 +536,28 @@ namespace FireNet.UI.ViewModels
             }
             catch { }
         }
+        public void ResetStateAfterLogin()
+        {
+            // پاک کردن ارورها
+            ErrorMessage = "";
+            Set(nameof(HasError));
+
+            // اتصال ریست شود
+            IsConnected = false;
+            ConnectionStatus = "Disconnected";
+
+            // پروفایل‌ها پاک می‌شوند تا LoadStatus دوباره اجرا شود
+            Profiles.Clear();
+            SelectedProfile = null;
+            _status = null;
+
+            // Xray هم در صورت نیاز
+            try
+            {
+                if (_xray.IsRunning)
+                    _xray.Stop();
+            }
+            catch { }
+        }
     }
 }
