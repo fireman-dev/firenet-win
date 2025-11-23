@@ -63,7 +63,7 @@
                     Background="Transparent"
                     BorderThickness="0"
                     Command="{Binding OpenSettingsCommand}">
-                <Image Source="/Assets/Icons/settings.png"
+                <Image Source="Assets/Icons/settings.png"
                        Width="26" Height="26"/>
             </Button>
 
@@ -80,7 +80,7 @@
                     Background="Transparent"
                     BorderThickness="0"
                     Command="{Binding LogoutCommand}">
-                <Image Source="/Assets/Icons/logout.png"
+                <Image Source="Assets/Icons/logout.png"
                        Width="26" Height="26"/>
             </Button>
         </Grid>
