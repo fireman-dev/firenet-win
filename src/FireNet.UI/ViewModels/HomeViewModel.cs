@@ -15,9 +15,37 @@ namespace FireNet.UI.ViewModels
 {
     public class HomeViewModel : INotifyPropertyChanged
     {
-        // -------------------- SINGLETON --------------------
+        // -------------------------------------------------
+        // SINGLETON INSTANCE
+        // -------------------------------------------------
         public static HomeViewModel Instance { get; } = new HomeViewModel();
-        private HomeViewModel() { Initialize(); }
+
+        private HomeViewModel()
+        {
+            Log("HomeViewModel initialized (Singleton)");
+
+            _session = SessionManager.Instance;
+            _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
+            _configBuilder = new XrayConfigBuilder();
+            _xray = new XrayProcessManager();
+
+            AppVersion = $"v{Assembly.GetExecutingAssembly().GetName().Version}";
+
+            ConnectCommand = new RelayCommand(async _ => await ConnectOrDisconnect());
+            LogoutCommand = new RelayCommand(async _ => await LogoutAsync());
+            OpenSettingsCommand = new RelayCommand(_ => NavigationService.NavigateToSettings());
+            RefreshPingCommand = new RelayCommand(async _ => await MeasurePing());
+
+            _xray.OnCrashed += () =>
+            {
+                Log("Xray crashed");
+                SystemProxyManager.DisableProxy();
+                IsConnected = false;
+                ConnectionStatus = "Disconnected";
+            };
+
+            _ = LoadStatus();
+        }
 
         public event PropertyChangedEventHandler? PropertyChanged;
         private void Set(string prop) =>
@@ -85,6 +113,7 @@ namespace FireNet.UI.ViewModels
             get => _pingText;
             set
             {
+                if (_pingText == value) return;
                 _pingText = value;
                 Set(nameof(PingText));
             }
@@ -93,12 +122,39 @@ namespace FireNet.UI.ViewModels
         public ICommand RefreshPingCommand { get; }
 
         // Profiles
-        public class ProfileItem
+        public class ProfileItem : INotifyPropertyChanged
         {
-            public string Remark { get; set; }
-            public string FullLink { get; set; }
-            public bool IsSelected { get; set; }
-            public double Size { get; set; }
+            public event PropertyChangedEventHandler? PropertyChanged;
+            private void Set(string p) =>
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
+
+            private string _remark = "";
+            public string Remark
+            {
+                get => _remark;
+                set { if (_remark == value) return; _remark = value; Set(nameof(Remark)); }
+            }
+
+            private string _fullLink = "";
+            public string FullLink
+            {
+                get => _fullLink;
+                set { if (_fullLink == value) return; _fullLink = value; Set(nameof(FullLink)); }
+            }
+
+            private bool _isSelected;
+            public bool IsSelected
+            {
+                get => _isSelected;
+                set { if (_isSelected == value) return; _isSelected = value; Set(nameof(IsSelected)); }
+            }
+
+            private double _size;
+            public double Size
+            {
+                get => _size;
+                set { if (_size == value) return; _size = value; Set(nameof(Size)); }
+            }
         }
 
         public ObservableCollection<ProfileItem> Profiles { get; } = new();
@@ -135,9 +191,9 @@ namespace FireNet.UI.ViewModels
         public string AppVersion { get; }
 
         // Commands
-        public ICommand ConnectCommand { get; private set; }
-        public ICommand LogoutCommand { get; private set; }
-        public ICommand OpenSettingsCommand { get; private set; }
+        public ICommand ConnectCommand { get; }
+        public ICommand LogoutCommand { get; }
+        public ICommand OpenSettingsCommand { get; }
         public ICommand SelectProfileCommand =>
             new RelayCommand(p =>
             {
@@ -157,43 +213,54 @@ namespace FireNet.UI.ViewModels
         private const int SocksPort = 10808;
 
         // -------------------------------------------------
-        // Initialization
+        // Token Expired Helper
         // -------------------------------------------------
-        private void Initialize()
+        private static bool IsTokenExpiredError(Exception ex)
         {
-            _session = SessionManager.Instance;
-            _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
-            _configBuilder = new XrayConfigBuilder();
-            _xray = new XrayProcessManager();
+            var msg = ex.Message ?? "";
+            return msg.Contains("Token expired", StringComparison.OrdinalIgnoreCase) ||
+                   msg.Contains("invalid or expired", StringComparison.OrdinalIgnoreCase);
+        }
 
-            AppVersion = $"v{Assembly.GetExecutingAssembly().GetName().Version}";
+        private void HandleTokenExpired()
+        {
+            Log("HandleTokenExpired called");
 
-            ConnectCommand = new RelayCommand(async _ => await ConnectOrDisconnect());
-            LogoutCommand = new RelayCommand(async _ => await LogoutAsync());
-            OpenSettingsCommand = new RelayCommand(_ => NavigationService.NavigateToSettings());
-            RefreshPingCommand = new RelayCommand(async _ => await MeasurePing());
-
-            _xray.OnCrashed += () =>
+            try
             {
                 SystemProxyManager.DisableProxy();
-                IsConnected = false;
-                ConnectionStatus = "Disconnected";
-            };
+            }
+            catch { }
 
-            // only first time on app start
-            _ = LoadStatus();
+            try
+            {
+                if (_xray.IsRunning)
+                    _xray.Stop();
+            }
+            catch { }
+
+            IsConnected = false;
+            ConnectionStatus = "Disconnected";
+
+            // پاک کردن وضعیت
+            _status = null;
+            Profiles.Clear();
+            SelectedProfile = null;
+
+            ErrorMessage = "نشست شما منقضی شده است. لطفاً دوباره وارد شوید.";
+
+            SessionManager.Instance.ClearSession();
+
+            NavigationService.NavigateToLogin();
         }
 
         // -------------------------------------------------
-        // Load Status (called initially and after login)
+        // Load Status
         // -------------------------------------------------
-        public async Task ReloadStatusAfterLogin()
+        private async Task LoadStatus()
         {
-            await LoadStatus();
-        }
+            Log("LoadStatus started");
 
-        public async Task LoadStatus()
-        {
             try
             {
                 _status = await _api.GetStatusAsync();
@@ -201,7 +268,8 @@ namespace FireNet.UI.ViewModels
                 TrafficInfo = $"{FormatBytes(_status.used_traffic)} / {FormatBytes(_status.data_limit)}";
 
                 var days = (DateTimeOffset.FromUnixTimeSeconds(_status.expire).ToLocalTime().Date
-                           - DateTime.Now.Date).TotalDays;
+                        - DateTime.Now.Date).TotalDays;
+
                 ExpireInfo = $"{Math.Max(0, (int)days)} روز باقی مانده";
 
                 Profiles.Clear();
@@ -226,7 +294,9 @@ namespace FireNet.UI.ViewModels
             }
             catch (Exception ex)
             {
-                if (ex.Message.Contains("Token expired"))
+                Log($"LoadStatus ERROR: {ex}");
+
+                if (IsTokenExpiredError(ex))
                 {
                     HandleTokenExpired();
                     return;
@@ -245,48 +315,16 @@ namespace FireNet.UI.ViewModels
                     return raw[(idx + 1)..].Trim();
             }
             catch { }
+
             return "Server";
         }
 
         // -------------------------------------------------
-        // Reset after login
+        // Reload Status after Login   ←←  فقط این بخش جدید است
         // -------------------------------------------------
-        public void ResetStateAfterLogin()
+        public async Task ReloadStatusAfterLogin()
         {
-            ErrorMessage = "";
-            IsConnected = false;
-            ConnectionStatus = "Disconnected";
-
-            Profiles.Clear();
-            SelectedProfile = null;
-
-            _status = null;
-
-            try
-            {
-                if (_xray.IsRunning)
-                    _xray.Stop();
-            }
-            catch { }
-        }
-
-        // -------------------------------------------------
-        // Token Expired Handling
-        // -------------------------------------------------
-        private void HandleTokenExpired()
-        {
-            try
-            {
-                SystemProxyManager.DisableProxy();
-                _xray.Stop();
-            }
-            catch { }
-
-            _session.ClearSession();
-
-            ErrorMessage = "نشست شما منقضی شده است. لطفاً دوباره وارد شوید.";
-
-            NavigationService.NavigateToLogin();
+            await LoadStatus();
         }
 
         // -------------------------------------------------
@@ -294,6 +332,8 @@ namespace FireNet.UI.ViewModels
         // -------------------------------------------------
         private void SelectProfile(ProfileItem item)
         {
+            Log($"SelectProfile: {item?.Remark}");
+
             try
             {
                 foreach (var p in Profiles)
@@ -304,13 +344,14 @@ namespace FireNet.UI.ViewModels
 
                 item.IsSelected = true;
                 item.Size = 60;
+
                 SelectedProfile = item;
 
                 Set(nameof(Profiles));
             }
             catch (Exception ex)
             {
-                ErrorMessage = ex.Message;
+                Log($"SelectProfile ERROR: {ex}");
             }
         }
 
@@ -325,6 +366,8 @@ namespace FireNet.UI.ViewModels
 
                 if (_xray.IsRunning)
                 {
+                    Log("Disconnecting...");
+
                     SystemProxyManager.DisableProxy();
                     _xray.Stop();
 
@@ -335,6 +378,7 @@ namespace FireNet.UI.ViewModels
 
                 if (_status == null)
                 {
+                    Log("Status NULL, calling LoadStatus()");
                     await LoadStatus();
                     if (_status == null)
                         throw new Exception("Failed to load server status");
@@ -346,13 +390,18 @@ namespace FireNet.UI.ViewModels
                 if (SelectedProfile == null)
                     throw new Exception("هیچ سروری انتخاب نشده");
 
+                Log("Building Xray config...");
                 string cfg = _configBuilder.BuildConfig(new() { SelectedProfile.FullLink });
 
+                Log("Starting Xray...");
                 _xray.Start(cfg);
+
                 SystemProxyManager.EnableSocksProxy(SocksHost, SocksPort);
 
                 IsConnected = true;
                 ConnectionStatus = "Connected";
+
+                Log("Connected OK");
 
                 _ = Task.Run(async () =>
                 {
@@ -364,9 +413,10 @@ namespace FireNet.UI.ViewModels
                             await Task.Delay(30000);
                         }
                     }
-                    catch (Exception ex2)
+                    catch (Exception ex)
                     {
-                        if (ex2.Message.Contains("Token expired"))
+                        Log($"KeepAlive ERROR: {ex}");
+                        if (IsTokenExpiredError(ex))
                         {
                             HandleTokenExpired();
                         }
@@ -375,13 +425,15 @@ namespace FireNet.UI.ViewModels
             }
             catch (Exception ex)
             {
-                if (ex.Message.Contains("Token expired"))
+                Log($"ConnectOrDisconnect ERROR: {ex}");
+                SystemProxyManager.DisableProxy();
+
+                if (IsTokenExpiredError(ex))
                 {
                     HandleTokenExpired();
                     return;
                 }
 
-                SystemProxyManager.DisableProxy();
                 IsConnected = false;
                 ConnectionStatus = "Disconnected";
                 ErrorMessage = ex.Message;
@@ -399,15 +451,19 @@ namespace FireNet.UI.ViewModels
 
                 if (_xray.IsRunning)
                 {
+                    Log("Stopping Xray for logout...");
                     SystemProxyManager.DisableProxy();
                     _xray.Stop();
                 }
 
                 await _api.LogoutAsync();
+                Log("Logout API OK");
             }
             catch (Exception ex)
             {
-                if (ex.Message.Contains("Token expired"))
+                Log($"Logout ERROR: {ex}");
+
+                if (IsTokenExpiredError(ex))
                 {
                     HandleTokenExpired();
                     return;
@@ -434,13 +490,25 @@ namespace FireNet.UI.ViewModels
                 }
 
                 PingText = "Ping: measuring...";
+                Log("Measuring ping...");
 
                 long delay = await RealDelayTester.MeasureAsync(SelectedProfile.FullLink);
 
-                PingText = delay <= 0 ? "Ping: timeout" : $"Ping: {delay}ms";
+                PingText =
+                    delay <= 0 ? "Ping: timeout" : $"Ping: {delay}ms";
+
+                Log($"Ping result: {PingText}");
             }
-            catch
+            catch (Exception ex)
             {
+                Log($"Ping ERROR: {ex}");
+
+                if (IsTokenExpiredError(ex))
+                {
+                    HandleTokenExpired();
+                    return;
+                }
+
                 PingText = "Ping: error";
             }
         }
@@ -458,6 +526,46 @@ namespace FireNet.UI.ViewModels
             if (mb >= 1) return $"{mb:F2} MB";
             if (kb >= 1) return $"{kb:F2} KB";
             return $"{b} B";
+        }
+
+        // Logging
+        private void Log(string msg)
+        {
+            try
+            {
+                string dir = System.IO.Path.Combine(AppContext.BaseDirectory, "logs");
+                string path = System.IO.Path.Combine(dir, "app.log");
+
+                if (!System.IO.Directory.Exists(dir))
+                    System.IO.Directory.CreateDirectory(dir);
+
+                string line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {msg}";
+                System.IO.File.AppendAllText(path, line + Environment.NewLine);
+            }
+            catch { }
+        }
+        public void ResetStateAfterLogin()
+        {
+            // پاک کردن ارورها
+            ErrorMessage = "";
+            Set(nameof(HasError));
+
+            // اتصال ریست شود
+            IsConnected = false;
+            ConnectionStatus = "Disconnected";
+
+            // پروفایل‌ها پاک می‌شوند تا LoadStatus دوباره اجرا شود
+            Profiles.Clear();
+            SelectedProfile = null;
+            _status = null;
+
+            // Xray هم در صورت نیاز
+            try
+            {
+                if (_xray.IsRunning)
+                    _xray.Stop();
+            }
+            catch { }
         }
     }
 }
