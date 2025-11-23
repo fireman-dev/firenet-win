@@ -13,7 +13,7 @@
     <!-- =============================== -->
     <Page.Resources>
 
-        <!-- BUTTON بدون Hover / Focus / Pressed -->
+        <!-- BUTTON بدون Hover / Pressed / Focus -->
         <Style x:Key="ProfileButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -27,7 +27,6 @@
                     <ControlTemplate TargetType="Button">
                         <ContentPresenter/>
 
-                        <!-- حذف hover/focus/pressed -->
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True"/>
                             <Trigger Property="IsPressed" Value="True"/>
@@ -39,6 +38,7 @@
         </Style>
 
     </Page.Resources>
+
 
     <Grid>
 
@@ -84,6 +84,7 @@
                        Width="26" Height="26"/>
             </Button>
         </Grid>
+
 
         <!-- ============================= -->
         <!-- MAIN CONTENT -->
@@ -167,6 +168,7 @@
                     </TextBlock.InputBindings>
                 </TextBlock>
 
+
                 <!-- ============================= -->
                 <!-- PROFILES (CIRCLES) -->
                 <!-- ============================= -->
@@ -174,8 +176,7 @@
                 <ScrollViewer HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Disabled"
                               Margin="0,20,0,0"
-                              PanningMode="HorizontalOnly"
-                              ManipulationMode="TranslateX">
+                              PanningMode="HorizontalOnly">
 
                     <ItemsControl ItemsSource="{Binding Profiles}">
                         <ItemsControl.ItemsPanel>
@@ -232,6 +233,7 @@
                     </ItemsControl>
                 </ScrollViewer>
 
+
                 <!-- Error -->
                 <TextBlock Text="{Binding ErrorMessage}"
                            Foreground="#FF5555"
@@ -244,13 +246,16 @@
             </StackPanel>
         </ScrollViewer>
 
+
+        <!-- Version bottom -->
         <TextBlock Grid.Row="2"
                    Text="{Binding AppVersion}"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
                    Foreground="{DynamicResource ForegroundBrush}"
                    Opacity="0.6"
-                   FontSize="13"/>
+                   FontSize="13"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"/>
+
     </Grid>
 
 </Page>
