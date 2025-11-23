@@ -8,7 +8,7 @@ namespace FireNet.UI.Views
         public HomePage()
         {
             InitializeComponent();
-            DataContext = new HomeViewModel();
+            DataContext = HomeViewModel.Instance;   // ← SINGLETON
         }
     }
 }
