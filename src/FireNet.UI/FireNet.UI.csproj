@@ -8,12 +8,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <!--  اضافه کردن آیکن‌ها به‌صورت Resource -->
-  <ItemGroup>
-    <Resource Include="Assets\Icons\logout.png" />
-    <Resource Include="Assets\Icons\settings.png" />
-  </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\FireNet.Core\FireNet.Core.csproj" />
   </ItemGroup>
