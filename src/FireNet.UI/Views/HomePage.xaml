@@ -16,9 +16,7 @@
             <RowDefinition Height="32"/>
         </Grid.RowDefinitions>
 
-        <!-- ============================= -->
         <!-- HEADER -->
-        <!-- ============================= -->
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -56,10 +54,7 @@
             </Button>
         </Grid>
 
-
-        <!-- ============================= -->
         <!-- MAIN CONTENT -->
-        <!-- ============================= -->
         <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto">
 
@@ -142,7 +137,6 @@
 
                 </Button>
 
-
                 <!-- Ping -->
                 <TextBlock Text="{Binding PingText}"
                            Foreground="{DynamicResource ForegroundBrush}"
@@ -155,10 +149,7 @@
                     </TextBlock.InputBindings>
                 </TextBlock>
 
-
-                <!-- ============================= -->
                 <!-- PROFILES LIST -->
-                <!-- ============================= -->
                 <ScrollViewer HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Disabled"
                               Margin="0,20,0,0">
@@ -179,41 +170,42 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
 
-                                <StackPanel Orientation="Vertical"
-                                            HorizontalAlignment="Center"
-                                            Cursor="Hand"
-                                            MouseLeftButtonUp="{Binding DataContext.SelectProfileCommand,
-                                                RelativeSource={RelativeSource AncestorType=Page}}"
-                                            Tag="{Binding}">
+                                <!-- دکمه دایره‌ای پروفایل -->
+                                <Button Background="Transparent"
+                                        BorderThickness="0"
+                                        Cursor="Hand"
+                                        Command="{Binding DataContext.SelectProfileCommand,
+                                                          RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding}">
+                                    <StackPanel Orientation="Vertical"
+                                                HorizontalAlignment="Center">
 
-                                    <!-- PROFILE CIRCLE -->
-                                    <Border Width="{Binding Size}"
-                                            Height="{Binding Size}"
-                                            CornerRadius="{Binding Size, Converter={StaticResource HalfConverter}}"
-                                            BorderBrush="{Binding IsSelected, Converter={StaticResource BoolToColorConverter}}"
-                                            BorderThickness="3"
-                                            Background="{DynamicResource CardBrush}"
-                                            HorizontalAlignment="Center">
+                                        <!-- دایره -->
+                                        <Border Width="{Binding Size}"
+                                                Height="{Binding Size}"
+                                                CornerRadius="{Binding Size, Converter={StaticResource HalfConverter}}"
+                                                BorderBrush="{Binding IsSelected, Converter={StaticResource BoolToColorConverter}}"
+                                                BorderThickness="3"
+                                                Background="{DynamicResource CardBrush}"
+                                                HorizontalAlignment="Center">
 
-                                        <Ellipse Fill="{DynamicResource ForegroundBrush}"/>
-                                    </Border>
+                                            <Ellipse Fill="{DynamicResource ForegroundBrush}"/>
+                                        </Border>
 
-                                    <!-- REMARK -->
-                                    <TextBlock Text="{Binding Remark}"
-                                               Foreground="{DynamicResource ForegroundBrush}"
-                                               FontSize="13"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,6,0,0"/>
-
-                                </StackPanel>
+                                        <!-- متن زیر دایره -->
+                                        <TextBlock Text="{Binding Remark}"
+                                                   Foreground="{DynamicResource ForegroundBrush}"
+                                                   FontSize="13"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,6,0,0"/>
+                                    </StackPanel>
+                                </Button>
 
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
 
                     </ItemsControl>
-
                 </ScrollViewer>
-
 
                 <!-- Error -->
                 <TextBlock Text="{Binding ErrorMessage}"
@@ -226,7 +218,6 @@
             </StackPanel>
 
         </ScrollViewer>
-
 
         <!-- VERSION -->
         <TextBlock Grid.Row="2"
