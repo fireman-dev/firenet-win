@@ -22,8 +22,7 @@ namespace FireNet.UI.ViewModels
             _session = SessionManager.Instance;
             _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
 
-            // RelayCommand شما فقط یک پارامتر می‌گیرد
-            LoginCommand = new RelayCommand(async _ => await Login());
+            LoginCommand = new RelayCommand(async _ => await Login(), _ => CanLogin);
         }
 
         private string _username = "";
@@ -50,12 +49,6 @@ namespace FireNet.UI.ViewModels
                 Set(nameof(Password));
                 Set(nameof(CanLogin));
             }
-        }
-
-        // LoginPage.xaml.cs این تابع را صدا می‌زند
-        public void GetPassword(string password)
-        {
-            Password = password;
         }
 
         private bool _isBusy;
