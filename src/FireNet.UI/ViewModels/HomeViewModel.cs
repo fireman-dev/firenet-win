@@ -88,13 +88,62 @@ namespace FireNet.UI.ViewModels
 
         public ICommand RefreshPingCommand { get; }
 
+        // -------------------------------------------------
         // Profiles
-        public class ProfileItem
+        // -------------------------------------------------
+        public class ProfileItem : INotifyPropertyChanged
         {
-            public string Remark { get; set; }
-            public string FullLink { get; set; }
-            public bool IsSelected { get; set; }
-            public double Size { get; set; }
+            public event PropertyChangedEventHandler? PropertyChanged;
+            private void Set(string prop) =>
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+
+            private string _remark = "";
+            public string Remark
+            {
+                get => _remark;
+                set
+                {
+                    if (_remark == value) return;
+                    _remark = value;
+                    Set(nameof(Remark));
+                }
+            }
+
+            private string _fullLink = "";
+            public string FullLink
+            {
+                get => _fullLink;
+                set
+                {
+                    if (_fullLink == value) return;
+                    _fullLink = value;
+                    Set(nameof(FullLink));
+                }
+            }
+
+            private bool _isSelected;
+            public bool IsSelected
+            {
+                get => _isSelected;
+                set
+                {
+                    if (_isSelected == value) return;
+                    _isSelected = value;
+                    Set(nameof(IsSelected));
+                }
+            }
+
+            private double _size;
+            public double Size
+            {
+                get => _size;
+                set
+                {
+                    if (_size == value) return;
+                    _size = value;
+                    Set(nameof(Size));
+                }
+            }
         }
 
         public ObservableCollection<ProfileItem> Profiles { get; } = new();
@@ -197,27 +246,17 @@ namespace FireNet.UI.ViewModels
                 _status = await _api.GetStatusAsync();
                 Log("API GetStatusAsync OK");
 
-                Log($"used_traffic  = {_status.used_traffic}");
-                Log($"data_limit    = {_status.data_limit}");
-                Log($"expire        = {_status.expire}");
-                Log($"links_count   = {_status.links?.Count}");
-
                 TrafficInfo = $"{FormatBytes(_status.used_traffic)} / {FormatBytes(_status.data_limit)}";
-                Log($"TrafficInfo set: {TrafficInfo}");
 
                 var days = (DateTimeOffset.FromUnixTimeSeconds(_status.expire).ToLocalTime().Date
                            - DateTime.Now.Date).TotalDays;
 
                 ExpireInfo = $"{Math.Max(0, (int)days)} روز باقی مانده";
-                Log($"ExpireInfo set: {ExpireInfo}");
 
                 Profiles.Clear();
-                Log("Profiles cleared");
 
                 foreach (var link in _status.links)
                 {
-                    Log($"Import link: {link}");
-
                     string remark = ExtractRemark(link);
 
                     Profiles.Add(new ProfileItem
@@ -227,19 +266,10 @@ namespace FireNet.UI.ViewModels
                         IsSelected = false,
                         Size = 45
                     });
-
-                    Log($"Profile Added: {remark}");
                 }
 
                 if (Profiles.Count > 0)
-                {
-                    Log("Selecting first profile");
                     SelectProfile(Profiles[0]);
-                }
-                else
-                {
-                    Log("Profiles count is ZERO!");
-                }
             }
             catch (Exception ex)
             {
@@ -281,8 +311,6 @@ namespace FireNet.UI.ViewModels
 
                 SelectedProfile = item;
 
-                Log($"SelectedProfile OK: {item.Remark}");
-
                 Set(nameof(Profiles));
             }
             catch (Exception ex)
@@ -302,8 +330,6 @@ namespace FireNet.UI.ViewModels
 
                 if (_xray.IsRunning)
                 {
-                    Log("Disconnecting...");
-
                     SystemProxyManager.DisableProxy();
                     _xray.Stop();
 
@@ -314,7 +340,6 @@ namespace FireNet.UI.ViewModels
 
                 if (_status == null)
                 {
-                    Log("Status NULL, calling LoadStatus()");
                     await LoadStatus();
                     if (_status == null)
                         throw new Exception("Failed to load server status");
@@ -326,18 +351,14 @@ namespace FireNet.UI.ViewModels
                 if (SelectedProfile == null)
                     throw new Exception("هیچ سروری انتخاب نشده");
 
-                Log("Building Xray config...");
                 string cfg = _configBuilder.BuildConfig(new() { SelectedProfile.FullLink });
 
-                Log("Starting Xray...");
                 _xray.Start(cfg);
 
                 SystemProxyManager.EnableSocksProxy(SocksHost, SocksPort);
 
                 IsConnected = true;
                 ConnectionStatus = "Connected";
-
-                Log("Connected OK");
 
                 _ = Task.Run(async () =>
                 {
@@ -354,7 +375,6 @@ namespace FireNet.UI.ViewModels
             }
             catch (Exception ex)
             {
-                Log($"ConnectOrDisconnect ERROR: {ex}");
                 SystemProxyManager.DisableProxy();
 
                 IsConnected = false;
@@ -374,17 +394,14 @@ namespace FireNet.UI.ViewModels
 
                 if (_xray.IsRunning)
                 {
-                    Log("Stopping Xray for logout...");
                     SystemProxyManager.DisableProxy();
                     _xray.Stop();
                 }
 
                 await _api.LogoutAsync();
-                Log("Logout API OK");
             }
             catch (Exception ex)
             {
-                Log($"Logout ERROR: {ex}");
                 ErrorMessage = ex.Message;
                 return;
             }
@@ -406,18 +423,13 @@ namespace FireNet.UI.ViewModels
                 }
 
                 PingText = "Ping: measuring...";
-                Log("Measuring ping...");
 
                 long delay = await RealDelayTester.MeasureAsync(SelectedProfile.FullLink);
 
-                PingText =
-                    delay <= 0 ? "Ping: timeout" : $"Ping: {delay}ms";
-
-                Log($"Ping result: {PingText}");
+                PingText = delay <= 0 ? "Ping: timeout" : $"Ping: {delay}ms";
             }
-            catch (Exception ex)
+            catch
             {
-                Log($"Ping ERROR: {ex}");
                 PingText = "Ping: error";
             }
         }
@@ -449,9 +461,3 @@ namespace FireNet.UI.ViewModels
                     System.IO.Directory.CreateDirectory(dir);
 
                 string line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {msg}";
-                System.IO.File.AppendAllText(path, line + Environment.NewLine);
-            }
-            catch { }
-        }
-    }
-}
