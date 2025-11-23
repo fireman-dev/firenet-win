@@ -14,107 +14,64 @@ namespace FireNet.UI.ViewModels
         public event PropertyChangedEventHandler PropertyChanged;
         private void Set(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-        private readonly PanelApiClient _api;
+        // -------------------------------
+        // Bindings
+        // -------------------------------
+        public string Username { get; set; }
+        public Func<string> GetPassword { get; set; }
+
+        public string ErrorMessage { get; set; }
+        public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
+
+        // -------------------------------
+        // Command
+        // -------------------------------
+        public ICommand LoginCommand { get; }
+
+        // -------------------------------
+        // Services
+        // -------------------------------
         private readonly SessionManager _session;
+        private readonly PanelApiClient _api;
 
         public LoginViewModel()
         {
             _session = SessionManager.Instance;
             _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
 
-            LoginCommand = new RelayCommand(async _ => await Login(), _ => CanLogin);
+            LoginCommand = new RelayCommand(async (_) => await LoginAsync());
         }
 
-        private string _username = "";
-        public string Username
+        // -------------------------------
+        // Login Process
+        // -------------------------------
+        private async Task LoginAsync()
         {
-            get => _username;
-            set
-            {
-                if (_username == value) return;
-                _username = value;
-                Set(nameof(Username));
-                Set(nameof(CanLogin));
-            }
-        }
-
-        private string _password = "";
-        public string Password
-        {
-            get => _password;
-            set
-            {
-                if (_password == value) return;
-                _password = value;
-                Set(nameof(Password));
-                Set(nameof(CanLogin));
-            }
-        }
-
-        private bool _isBusy;
-        public bool IsBusy
-        {
-            get => _isBusy;
-            set
-            {
-                if (_isBusy == value) return;
-                _isBusy = value;
-                Set(nameof(IsBusy));
-                Set(nameof(CanLogin));
-            }
-        }
-
-        private string? _errorMessage;
-        public string? ErrorMessage
-        {
-            get => _errorMessage;
-            set
-            {
-                if (_errorMessage == value) return;
-                _errorMessage = value;
-                Set(nameof(ErrorMessage));
-                Set(nameof(HasError));
-            }
-        }
-
-        public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
-
-        public bool CanLogin =>
-            !IsBusy &&
-            !string.IsNullOrWhiteSpace(Username) &&
-            !string.IsNullOrWhiteSpace(Password);
-
-        public ICommand LoginCommand { get; }
-
-        private async Task Login()
-        {
-            if (!CanLogin)
-                return;
-
-            IsBusy = true;
             ErrorMessage = "";
+            Set(nameof(HasError));
+            Set(nameof(ErrorMessage));
 
             try
             {
                 var req = new LoginRequest
                 {
-                    username = Username.Trim(),
-                    password = Password,
-                    device_id = MachineId()
+                    username = Username,
+                    password = GetPassword(),
+                    device_id = MachineId(),
+                    app_version = "1.0.0"
                 };
 
                 await _api.LoginAsync(req);
 
-                // اگر لاگین موفق شد، میریم صفحه Home
+                // بعد از لاگین → برو home
                 NavigationService.NavigateToHome();
+
             }
             catch (Exception ex)
             {
                 ErrorMessage = ex.Message;
-            }
-            finally
-            {
-                IsBusy = false;
+                Set(nameof(ErrorMessage));
+                Set(nameof(HasError));
             }
         }
 
