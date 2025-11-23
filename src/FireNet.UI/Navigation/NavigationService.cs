@@ -8,7 +8,6 @@ namespace FireNet.UI.Navigation
         private static Frame _frame;
 
         private static HomePage? _homePage;
-        private static LoginPage? _loginPage;
         private static SettingsPage? _settingsPage;
 
         public static void SetFrame(Frame frame)
@@ -22,26 +21,32 @@ namespace FireNet.UI.Navigation
                 throw new System.InvalidOperationException("Navigation frame is not set.");
         }
 
+        // همیشه LoginPage جدید بساز تا باگِ لاگین بعد از TokenExpired حل شود
         public static void NavigateToLogin()
         {
             EnsureFrame();
-            
             _frame.Navigate(new LoginPage());
         }
 
+        // HomePage نباید دوباره ساخته شود
         public static void NavigateToHome()
         {
             EnsureFrame();
 
-            _homePage ??= new HomePage();
+            if (_homePage == null)
+                _homePage = new HomePage();
+
             _frame.Navigate(_homePage);
         }
 
+        // SettingsPage فقط یک بار ساخته شود
         public static void NavigateToSettings()
         {
             EnsureFrame();
 
-            _settingsPage ??= new SettingsPage();
+            if (_settingsPage == null)
+                _settingsPage = new SettingsPage();
+
             _frame.Navigate(_settingsPage);
         }
     }

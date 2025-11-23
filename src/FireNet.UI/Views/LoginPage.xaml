@@ -6,6 +6,7 @@
       xmlns:vm="clr-namespace:FireNet.UI.ViewModels"
       mc:Ignorable="d">
 
+    <!-- LoginViewModel باید از XAML ساخته شود تا LoginPage همیشه ViewModel جدید داشته باشد -->
     <Page.DataContext>
         <vm:LoginViewModel/>
     </Page.DataContext>
@@ -125,7 +126,8 @@
                              Background="#141414"
                              Foreground="White"
                              BorderBrush="#333"
-                             BorderThickness="1.2"/>
+                             BorderThickness="1.2"
+                             PasswordChanged="PasswordInput_PasswordChanged"/>
 
                 <TextBlock x:Name="PasswordPlaceholder"
                            Text="Password"
@@ -162,6 +164,7 @@
                         </Style.Triggers>
                     </Style>
                 </Grid.Style>
+
             </Grid>
 
             <!-- LOGIN BUTTON -->
