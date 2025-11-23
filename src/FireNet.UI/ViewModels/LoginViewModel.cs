@@ -12,7 +12,8 @@ namespace FireNet.UI.ViewModels
     public class LoginViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
-        private void Set(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        private void Set(string name) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         private readonly PanelApiClient _api;
         private readonly SessionManager _session;
@@ -22,7 +23,6 @@ namespace FireNet.UI.ViewModels
             _session = SessionManager.Instance;
             _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
 
-            // RelayCommand شما فقط یک پارامتر دارد
             LoginCommand = new RelayCommand(async _ => await Login());
         }
 
@@ -32,7 +32,6 @@ namespace FireNet.UI.ViewModels
             get => _username;
             set
             {
-                if (_username == value) return;
                 _username = value;
                 Set(nameof(Username));
                 Set(nameof(CanLogin));
@@ -45,7 +44,6 @@ namespace FireNet.UI.ViewModels
             get => _password;
             set
             {
-                if (_password == value) return;
                 _password = value;
                 Set(nameof(Password));
                 Set(nameof(CanLogin));
@@ -58,7 +56,6 @@ namespace FireNet.UI.ViewModels
             get => _isBusy;
             set
             {
-                if (_isBusy == value) return;
                 _isBusy = value;
                 Set(nameof(IsBusy));
                 Set(nameof(CanLogin));
@@ -71,7 +68,6 @@ namespace FireNet.UI.ViewModels
             get => _errorMessage;
             set
             {
-                if (_errorMessage == value) return;
                 _errorMessage = value;
                 Set(nameof(ErrorMessage));
                 Set(nameof(HasError));
@@ -106,8 +102,11 @@ namespace FireNet.UI.ViewModels
 
                 await _api.LoginAsync(req);
 
-                // ریست کامل وضعیت هوم
+                // reset previous state
                 HomeViewModel.Instance.ResetStateAfterLogin();
+
+                // load status again
+                await HomeViewModel.Instance.ReloadStatusAfterLogin();
 
                 NavigationService.NavigateToHome();
             }
