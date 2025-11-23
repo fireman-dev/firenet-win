@@ -7,28 +7,43 @@ namespace FireNet.UI.Navigation
     {
         private static Frame _frame;
 
-        private static HomePage _homePage = new HomePage();       // ← ثابت
-        private static SettingsPage _settingsPage = new SettingsPage(); // ← ثابت
-        private static LoginPage _loginPage = new LoginPage();    // ← ثابت
+        private static HomePage? _homePage;
+        private static LoginPage? _loginPage;
+        private static SettingsPage? _settingsPage;
 
         public static void SetFrame(Frame frame)
         {
             _frame = frame;
         }
 
-        public static void NavigateToHome()
+        private static void EnsureFrame()
         {
-            _frame.Navigate(_homePage); // ← new نمی‌سازیم
-        }
-
-        public static void NavigateToSettings()
-        {
-            _frame.Navigate(_settingsPage);
+            if (_frame == null)
+                throw new System.InvalidOperationException("Navigation frame is not set.");
         }
 
         public static void NavigateToLogin()
         {
+            EnsureFrame();
+
+            _loginPage ??= new LoginPage();
             _frame.Navigate(_loginPage);
+        }
+
+        public static void NavigateToHome()
+        {
+            EnsureFrame();
+
+            _homePage ??= new HomePage();
+            _frame.Navigate(_homePage);
+        }
+
+        public static void NavigateToSettings()
+        {
+            EnsureFrame();
+
+            _settingsPage ??= new SettingsPage();
+            _frame.Navigate(_settingsPage);
         }
     }
 }

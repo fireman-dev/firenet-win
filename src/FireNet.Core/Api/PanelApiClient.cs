@@ -40,6 +40,18 @@ namespace FireNet.Core.Api
         }
 
         // -----------------------------------------------------------
+        // هندل کردن 401 (توکن نامعتبر یا منقضی)
+        // -----------------------------------------------------------
+        private void HandleUnauthorized(string body)
+        {
+            // اینجا می‌تونیم لاگ دقیق‌تر هم بگیریم اگر خواستی
+            _session.ClearSession();
+
+            // پیام واحد که ViewModel بر اساسش ریدایرکت می‌کند
+            throw new Exception("Token expired");
+        }
+
+        // -----------------------------------------------------------
         // 1) LOGIN
         // -----------------------------------------------------------
         public async Task<LoginResponse> LoginAsync(LoginRequest req)
@@ -55,7 +67,11 @@ namespace FireNet.Core.Api
 
             var result = JsonSerializer.Deserialize<LoginResponse>(body);
 
+            if (result == null || string.IsNullOrEmpty(result.token))
+                throw new Exception("Login failed: invalid response");
+
             _session.SaveToken(result.token);
+            _session.SaveUser(result.user);
 
             return result;
         }
@@ -72,14 +88,14 @@ namespace FireNet.Core.Api
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                _session.ClearSession();
-                throw new Exception("Token expired");
+                HandleUnauthorized(body);
             }
 
             if (!response.IsSuccessStatusCode)
                 throw new Exception($"Status error: {body}");
 
-            return JsonSerializer.Deserialize<StatusResponse>(body);
+            return JsonSerializer.Deserialize<StatusResponse>(body)
+                   ?? throw new Exception("Status parse error");
         }
 
         // -----------------------------------------------------------
@@ -89,16 +105,18 @@ namespace FireNet.Core.Api
         {
             AttachToken();
 
-            var response = await _http.PostAsync($"{_baseUrl}/api/keepalive", null);
+            var response = await _http.GetAsync($"{_baseUrl}/api/keep-alive");
             string body = await response.Content.ReadAsStringAsync();
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                _session.ClearSession();
-                return false;
+                HandleUnauthorized(body);
             }
 
-            return response.IsSuccessStatusCode;
+            if (!response.IsSuccessStatusCode)
+                throw new Exception($"KeepAlive error: {body}");
+
+            return true;
         }
 
         // -----------------------------------------------------------
@@ -116,8 +134,7 @@ namespace FireNet.Core.Api
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                _session.ClearSession();
-                return false;
+                HandleUnauthorized(body);
             }
 
             return response.IsSuccessStatusCode;
@@ -134,19 +151,41 @@ namespace FireNet.Core.Api
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await _http.PostAsync($"{_baseUrl}/api/report-update", content);
+            string body = await response.Content.ReadAsStringAsync();
 
-            return response.IsSuccessStatusCode;
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                HandleUnauthorized(body);
+            }
+
+            if (!response.IsSuccessStatusCode)
+                throw new Exception($"ReportUpdate error: {body}");
+
+            return true;
         }
 
         // -----------------------------------------------------------
         // 6) UPDATE PROMPT SEEN
         // -----------------------------------------------------------
-        public async Task<bool> UpdatePromptSeenAsync()
+        public async Task<bool> UpdatePromptSeenAsync(UpdatePromptSeenRequest req)
         {
             AttachToken();
 
-            var response = await _http.PostAsync($"{_baseUrl}/api/update-prompt-seen", null);
-            return response.IsSuccessStatusCode;
+            var json = JsonSerializer.Serialize(req);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _http.PostAsync($"{_baseUrl}/api/update-prompt-seen", content);
+            string body = await response.Content.ReadAsStringAsync();
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                HandleUnauthorized(body);
+            }
+
+            if (!response.IsSuccessStatusCode)
+                throw new Exception($"UpdatePromptSeen error: {body}");
+
+            return true;
         }
 
         // -----------------------------------------------------------
@@ -157,6 +196,14 @@ namespace FireNet.Core.Api
             AttachToken();
 
             var response = await _http.PostAsync($"{_baseUrl}/api/logout", null);
+            string body = await response.Content.ReadAsStringAsync();
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                // توکن قبلاً باطل شده – SESSION رو خالی کن ولی ارور نگیر
+                _session.ClearSession();
+                return true;
+            }
 
             _session.ClearSession();
 

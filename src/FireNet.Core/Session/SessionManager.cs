@@ -14,148 +14,128 @@ namespace FireNet.Core.Session
         private readonly string _sessionPath;
         private readonly string _crashLogPath;
 
-        private class SessionFileModel
+        private class SessionData
         {
-            public string token { get; set; }
-            public long lastLogin { get; set; }
+            public string? Token { get; set; }
+            public string? Username { get; set; }
+            public string? DisplayName { get; set; }
         }
+
+        private SessionData _current = new();
 
         private SessionManager()
         {
-            string baseFolder = Path.Combine(
+            string appDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "FireNet"
-            );
+                "FireNet");
 
-            _sessionPath = Path.Combine(baseFolder, "session.json");
-            _crashLogPath = Path.Combine(baseFolder, "crash.log");
+            if (!Directory.Exists(appDir))
+                Directory.CreateDirectory(appDir);
 
-            try
-            {
-                if (!Directory.Exists(baseFolder))
-                    Directory.CreateDirectory(baseFolder);
-            }
-            catch (Exception ex)
-            {
-                LogCrash("Failed creating session folder", ex);
-            }
+            _sessionPath = Path.Combine(appDir, "session.json");
+            _crashLogPath = Path.Combine(appDir, "crash.log");
+
+            LoadSession();
         }
 
-        // ----------------------------
-        // Save JWT token
-        // ----------------------------
-        public void SaveToken(string token)
+        private void LoadSession()
         {
             try
             {
-                var model = new SessionFileModel
+                if (File.Exists(_sessionPath))
                 {
-                    token = token,
-                    lastLogin = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-                };
+                    string json = File.ReadAllText(_sessionPath);
+                    var data = JsonSerializer.Deserialize<SessionData>(json);
+                    if (data != null)
+                        _current = data;
+                }
+            }
+            catch
+            {
+                _current = new SessionData();
+            }
+        }
 
-                string json = JsonSerializer.Serialize(model, new JsonSerializerOptions
+        private void SaveSession()
+        {
+            try
+            {
+                string json = JsonSerializer.Serialize(_current, new JsonSerializerOptions
                 {
                     WriteIndented = true
                 });
-
                 File.WriteAllText(_sessionPath, json);
             }
-            catch (Exception ex)
+            catch
             {
-                LogCrash("SaveToken error", ex);
+                // ignore
             }
         }
 
-        // ----------------------------
-        // Read token
-        // ----------------------------
+        public void SaveToken(string token)
+        {
+            _current.Token = token;
+            SaveSession();
+        }
+
+        public void SaveUser(string username)
+        {
+            _current.Username = username;
+            _current.DisplayName = username;
+            SaveSession();
+        }
+
         public string GetToken()
         {
-            try
-            {
-                if (!File.Exists(_sessionPath))
-                    return null;
-
-                string json = File.ReadAllText(_sessionPath);
-                var obj = JsonSerializer.Deserialize<SessionFileModel>(json);
-
-                return obj?.token;
-            }
-            catch (Exception ex)
-            {
-                LogCrash("GetToken error", ex);
-                return null;
-            }
+            return _current.Token ?? string.Empty;
         }
 
-        // ----------------------------
-        // Property → user is logged in?
-        // ----------------------------
-        public bool IsLoggedIn => !string.IsNullOrEmpty(GetToken());
+        public bool HasToken()
+        {
+            return !string.IsNullOrWhiteSpace(_current.Token);
+        }
 
-        // ----------------------------
-        // Clear session
-        // ----------------------------
         public void ClearSession()
         {
+            _current = new SessionData();
             try
             {
                 if (File.Exists(_sessionPath))
                     File.Delete(_sessionPath);
             }
-            catch (Exception ex)
+            catch
             {
-                LogCrash("ClearSession error", ex);
+                // ignore
             }
         }
 
-        // ----------------------------
-        // Last login time
-        // ----------------------------
-        public long GetLastLoginTime()
+        // برای لاگ کرش‌ها
+        public void LogCrash(string message, Exception? ex = null)
         {
             try
             {
-                if (!File.Exists(_sessionPath))
-                    return 0;
+                string time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                string logEntry = $"[{time}] {message}";
 
-                string json = File.ReadAllText(_sessionPath);
-                var obj = JsonSerializer.Deserialize<SessionFileModel>(json);
-                return obj?.lastLogin ?? 0;
-            }
-            catch (Exception ex)
-            {
-                LogCrash("GetLastLoginTime error", ex);
-                return 0;
-            }
-        }
+                if (ex != null)
+                {
+                    logEntry += Environment.NewLine + ex + Environment.NewLine;
+                }
+                else
+                {
+                    logEntry += Environment.NewLine;
+                }
 
-        // ----------------------------
-        // Crash logging
-        // ----------------------------
-        public void LogCrash(string title, Exception ex)
-        {
-            try
-            {
-                string logEntry = $"[{DateTime.Now}] {title}\n{ex}\n-------------------------\n";
-
-                // اگر فایل وجود دارد: می‌خوانیم، خطوط را محدود می‌کنیم
                 if (File.Exists(_crashLogPath))
                 {
                     var lines = File.ReadAllLines(_crashLogPath);
-
-                    // اگر بیشتر از 500 خط شد، از ابتدای فایل حذف کن تا برسد به 499
-                    if (lines.Length >= 500)
+                    if (lines.Length > 2000)
                     {
-                        int removeCount = lines.Length - 499;
-                        var trimmed = new string[ lines.Length - removeCount ];
-                        Array.Copy(lines, removeCount, trimmed, 0, trimmed.Length);
+                        var trimmed = lines[^1000..];
                         File.WriteAllLines(_crashLogPath, trimmed);
                     }
                 }
 
-                // اضافه کردن لاگ جدید
                 File.AppendAllText(_crashLogPath, logEntry);
             }
             catch
