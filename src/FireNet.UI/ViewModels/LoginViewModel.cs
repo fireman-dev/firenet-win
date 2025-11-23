@@ -22,7 +22,8 @@ namespace FireNet.UI.ViewModels
             _session = SessionManager.Instance;
             _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
 
-            LoginCommand = new RelayCommand(async _ => await Login(), _ => CanLogin);
+            // RelayCommand شما فقط یک پارامتر دارد
+            LoginCommand = new RelayCommand(async _ => await Login());
         }
 
         private string _username = "";
@@ -105,9 +106,9 @@ namespace FireNet.UI.ViewModels
 
                 await _api.LoginAsync(req);
 
+                // ریست کامل وضعیت هوم
                 HomeViewModel.Instance.ResetStateAfterLogin();
-                
-                // اگر لاگین موفق شد، میریم صفحه Home
+
                 NavigationService.NavigateToHome();
             }
             catch (Exception ex)
@@ -122,7 +123,6 @@ namespace FireNet.UI.ViewModels
 
         private string MachineId()
         {
-            // دستگاه باید یک ID ثابت داشته باشد
             return Environment.MachineName + "_" + Environment.UserName;
         }
     }

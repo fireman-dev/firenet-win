@@ -8,11 +8,15 @@ namespace FireNet.UI.Views
         public LoginPage()
         {
             InitializeComponent();
+            DataContext = new LoginViewModel();
+        }
 
-            var vm = DataContext as LoginViewModel;
-            if (vm != null)
+        // این متد از PasswordBox صدا زده می‌شود
+        private void PasswordBox_PasswordChanged(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (DataContext is LoginViewModel vm)
             {
-                vm.GetPassword = () => PasswordInput.Password;
+                vm.Password = ((PasswordBox)sender).Password;
             }
         }
     }
