@@ -35,6 +35,14 @@ jobs:
         xcopy xray-core\* release\xray-core\ /E /Y
       shell: cmd
 
+    # add icons to installer
+    - name: Add icons
+      run: |
+        if not exist release\Assets mkdir release\Assets
+        if not exist release\Assets\Icons mkdir release\Assets\Icons
+        xcopy src\FireNet.UI\Assets\Icons\server.png release\Assets\Icons\ /Y
+      shell: cmd
+
     # Install Inno Setup via Chocolatey
     - name: Install Inno Setup
       run: choco install innosetup -y

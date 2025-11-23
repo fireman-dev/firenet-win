@@ -216,8 +216,15 @@
                                                 CornerRadius="{Binding Size, Converter={StaticResource HalfConverter}}"
                                                 BorderBrush="{Binding IsSelected, Converter={StaticResource BoolToColorConverter}}"
                                                 BorderThickness="3"
-                                                Background="{DynamicResource CardBrush}"
+                                                Background="Transparent"
                                                 HorizontalAlignment="Center">
+
+                                            <Image Source="/Assets/Icons/server.png"
+                                                Stretch="Uniform"
+                                                Width="{Binding Size}"
+                                                Height="{Binding Size}"/>
+
+                                        </Border>
 
                                             <Ellipse Fill="{DynamicResource ForegroundBrush}"
                                                      IsHitTestVisible="False"/>
