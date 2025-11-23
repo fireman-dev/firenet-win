@@ -461,3 +461,9 @@ namespace FireNet.UI.ViewModels
                     System.IO.Directory.CreateDirectory(dir);
 
                 string line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {msg}";
+                System.IO.File.AppendAllText(path, line + Environment.NewLine);
+            }
+            catch { }
+        }
+    }
+}
