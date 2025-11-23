@@ -39,7 +39,6 @@
 
     </Page.Resources>
 
-
     <Grid>
 
         <Grid.RowDefinitions>
@@ -220,14 +219,10 @@
                                                 HorizontalAlignment="Center">
 
                                             <Image Source="/Assets/Icons/server.png"
-                                                Stretch="Uniform"
-                                                Width="{Binding Size}"
-                                                Height="{Binding Size}"/>
+                                                   Stretch="Uniform"
+                                                   Width="{Binding Size}"
+                                                   Height="{Binding Size}"/>
 
-                                        </Border>
-
-                                            <Ellipse Fill="{DynamicResource ForegroundBrush}"
-                                                     IsHitTestVisible="False"/>
                                         </Border>
 
                                         <!-- REMARK -->
