@@ -8,6 +8,41 @@
       Height="530"
       Background="{DynamicResource BackgroundBrush}">
 
+    <!-- =============================== -->
+    <!-- STAGE 1: REMOVE BUTTON HOVER    -->
+    <!-- =============================== -->
+    <Page.Resources>
+
+        <!-- Button style بدون Hover / Focus / Pressed -->
+        <Style x:Key="ProfileButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Focusable" Value="False"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+
+                        <!-- فقط محتوای داخل Button -->
+                        <ContentPresenter/>
+
+                        <!-- هیچ Hover, Pressed, Focus فعال نیست -->
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"/>
+                            <Trigger Property="IsPressed" Value="True"/>
+                            <Trigger Property="IsFocused" Value="True"/>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Page.Resources>
+
     <Grid>
 
         <Grid.RowDefinitions>
@@ -16,7 +51,9 @@
             <RowDefinition Height="32"/>
         </Grid.RowDefinitions>
 
+        <!-- ============================= -->
         <!-- HEADER -->
+        <!-- ============================= -->
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -24,71 +61,63 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Settings -->
             <Button Grid.Column="0"
                     Background="Transparent"
                     BorderThickness="0"
-                    Cursor="Hand"
                     Command="{Binding OpenSettingsCommand}">
-                <Image Source="/Assets/Icons/settings.png"
-                       Width="26" Height="26"/>
+                <Image Source="/Assets/Icons/settings.png" Width="26"/>
             </Button>
 
-            <!-- Title -->
             <TextBlock Grid.Column="1"
                        Text="FireNet"
-                       Foreground="{DynamicResource ForegroundBrush}"
                        FontSize="20"
                        FontWeight="SemiBold"
+                       Foreground="{DynamicResource ForegroundBrush}"
                        VerticalAlignment="Center"
                        HorizontalAlignment="Center"/>
 
-            <!-- Logout -->
             <Button Grid.Column="2"
                     Background="Transparent"
                     BorderThickness="0"
-                    Cursor="Hand"
                     Command="{Binding LogoutCommand}">
-                <Image Source="/Assets/Icons/logout.png"
-                       Width="26" Height="26"/>
+                <Image Source="/Assets/Icons/logout.png" Width="26"/>
             </Button>
         </Grid>
 
-        <!-- MAIN CONTENT -->
-        <ScrollViewer Grid.Row="1"
-                      VerticalScrollBarVisibility="Auto">
-
+        <!-- ============================= -->
+        <!-- MAIN -->
+        <!-- ============================= -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Width="420"
                         Margin="0,20,0,0"
                         HorizontalAlignment="Center">
 
-                <!-- Traffic -->
+                <!-- TRAFFIC -->
                 <TextBlock Text="{Binding TrafficInfo}"
-                           Foreground="{DynamicResource ForegroundBrush}"
                            FontSize="16"
+                           Foreground="{DynamicResource ForegroundBrush}"
                            HorizontalAlignment="Center"/>
 
-                <!-- Expire -->
+                <!-- EXPIRE -->
                 <TextBlock Text="{Binding ExpireInfo}"
-                           Foreground="{DynamicResource ForegroundBrush}"
                            FontSize="15"
+                           Foreground="{DynamicResource ForegroundBrush}"
                            Opacity="0.8"
                            HorizontalAlignment="Center"/>
 
                 <!-- CONNECT BUTTON -->
                 <Button Command="{Binding ConnectCommand}"
+                        Width="150"
+                        Height="150"
                         Background="Transparent"
-                        BorderThickness="0"
-                        Cursor="Hand"
-                        Width="150" Height="150">
+                        BorderThickness="0">
 
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Grid>
 
                                 <Ellipse x:Name="Circle"
-                                         Width="150"
-                                         Height="150"
+                                         Width="150" Height="150"
                                          Fill="#202020"
                                          Stroke="#555"
                                          StrokeThickness="3"/>
@@ -111,25 +140,15 @@
 
                                 <!-- Connected -->
                                 <DataTrigger Binding="{Binding ConnectionStatus}" Value="Connected">
-                                    <Setter TargetName="Circle" Property="Stroke" Value="#21D4A8"/>
                                     <Setter TargetName="Circle" Property="Fill" Value="#0A332E"/>
+                                    <Setter TargetName="Circle" Property="Stroke" Value="#21D4A8"/>
                                 </DataTrigger>
 
                                 <!-- Disconnected -->
                                 <DataTrigger Binding="{Binding ConnectionStatus}" Value="Disconnected">
-                                    <Setter TargetName="Circle" Property="Stroke" Value="#444"/>
                                     <Setter TargetName="Circle" Property="Fill" Value="#252525"/>
+                                    <Setter TargetName="Circle" Property="Stroke" Value="#444"/>
                                 </DataTrigger>
-
-                                <!-- Hover -->
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Circle" Property="StrokeThickness" Value="4"/>
-                                </Trigger>
-
-                                <!-- Pressed -->
-                                <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="Circle" Property="StrokeThickness" Value="5"/>
-                                </Trigger>
 
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -137,10 +156,10 @@
 
                 </Button>
 
-                <!-- Ping -->
+                <!-- PING -->
                 <TextBlock Text="{Binding PingText}"
-                           Foreground="{DynamicResource ForegroundBrush}"
                            FontSize="15"
+                           Foreground="{DynamicResource ForegroundBrush}"
                            HorizontalAlignment="Center"
                            Cursor="Hand">
                     <TextBlock.InputBindings>
@@ -149,7 +168,9 @@
                     </TextBlock.InputBindings>
                 </TextBlock>
 
-                <!-- PROFILES LIST -->
+                <!-- ============================= -->
+                <!-- PROFILES -->
+                <!-- ============================= -->
                 <ScrollViewer HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Disabled"
                               Margin="0,20,0,0">
@@ -170,17 +191,18 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
 
-                                <!-- دکمه دایره‌ای پروفایل -->
-                                <Button Background="Transparent"
-                                        BorderThickness="0"
-                                        Cursor="Hand"
+                                <!-- ===================== -->
+                                <!-- دکمه پروفایل WITHOUT HOVER -->
+                                <!-- ===================== -->
+                                <Button Style="{StaticResource ProfileButtonStyle}"
                                         Command="{Binding DataContext.SelectProfileCommand,
-                                                          RelativeSource={RelativeSource AncestorType=Page}}"
+                                                  RelativeSource={RelativeSource AncestorType=Page}}"
                                         CommandParameter="{Binding}">
+
                                     <StackPanel Orientation="Vertical"
                                                 HorizontalAlignment="Center">
 
-                                        <!-- دایره -->
+                                        <!-- CIRCLE -->
                                         <Border Width="{Binding Size}"
                                                 Height="{Binding Size}"
                                                 CornerRadius="{Binding Size, Converter={StaticResource HalfConverter}}"
@@ -192,13 +214,14 @@
                                             <Ellipse Fill="{DynamicResource ForegroundBrush}"/>
                                         </Border>
 
-                                        <!-- متن زیر دایره -->
+                                        <!-- TEXT -->
                                         <TextBlock Text="{Binding Remark}"
-                                                   Foreground="{DynamicResource ForegroundBrush}"
                                                    FontSize="13"
+                                                   Margin="0,6,0,0"
                                                    HorizontalAlignment="Center"
-                                                   Margin="0,6,0,0"/>
+                                                   Foreground="{DynamicResource ForegroundBrush}"/>
                                     </StackPanel>
+
                                 </Button>
 
                             </DataTemplate>
@@ -207,16 +230,15 @@
                     </ItemsControl>
                 </ScrollViewer>
 
-                <!-- Error -->
+                <!-- ERROR -->
                 <TextBlock Text="{Binding ErrorMessage}"
                            Foreground="#FF5555"
                            FontSize="14"
+                           TextWrapping="Wrap"
                            Margin="0,10,0,0"
-                           Visibility="{Binding HasError,
-                               Converter={StaticResource BoolToVisibility}}"/>
+                           Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}"/>
 
             </StackPanel>
-
         </ScrollViewer>
 
         <!-- VERSION -->
