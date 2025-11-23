@@ -221,7 +221,7 @@
 
                                             <Image Source="pack://siteoforigin:,,,/Assets/Icons/server.png"
                                                 Stretch="Uniform"
-                                                Margin="6" />
+                                                Margin="1" />
 
                                         </Border>
 
