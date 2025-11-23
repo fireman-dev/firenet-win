@@ -71,7 +71,6 @@ namespace FireNet.Core.Api
                 throw new Exception("Login failed: invalid response");
 
             _session.SaveToken(result.token);
-            _session.SaveUser(result.user);
 
             return result;
         }
