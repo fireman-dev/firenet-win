@@ -9,11 +9,11 @@
       Background="{DynamicResource BackgroundBrush}">
 
     <!-- =============================== -->
-    <!-- STAGE 1: REMOVE BUTTON HOVER    -->
+    <!--   STAGE 1: CLEAN BUTTON STYLE   -->
     <!-- =============================== -->
     <Page.Resources>
 
-        <!-- Button style بدون Hover / Focus / Pressed -->
+        <!-- BUTTON بدون Hover / Focus / Pressed -->
         <Style x:Key="ProfileButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -25,17 +25,14 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-
-                        <!-- فقط محتوای داخل Button -->
                         <ContentPresenter/>
 
-                        <!-- هیچ Hover, Pressed, Focus فعال نیست -->
+                        <!-- حذف hover/focus/pressed -->
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True"/>
                             <Trigger Property="IsPressed" Value="True"/>
                             <Trigger Property="IsFocused" Value="True"/>
                         </ControlTemplate.Triggers>
-
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -61,47 +58,53 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
+            <!-- settings -->
             <Button Grid.Column="0"
                     Background="Transparent"
                     BorderThickness="0"
                     Command="{Binding OpenSettingsCommand}">
-                <Image Source="/Assets/Icons/settings.png" Width="26"/>
+                <Image Source="/Assets/Icons/settings.png"
+                       Width="26" Height="26"/>
             </Button>
 
             <TextBlock Grid.Column="1"
                        Text="FireNet"
+                       Foreground="{DynamicResource ForegroundBrush}"
                        FontSize="20"
                        FontWeight="SemiBold"
-                       Foreground="{DynamicResource ForegroundBrush}"
                        VerticalAlignment="Center"
                        HorizontalAlignment="Center"/>
 
+            <!-- logout -->
             <Button Grid.Column="2"
                     Background="Transparent"
                     BorderThickness="0"
                     Command="{Binding LogoutCommand}">
-                <Image Source="/Assets/Icons/logout.png" Width="26"/>
+                <Image Source="/Assets/Icons/logout.png"
+                       Width="26" Height="26"/>
             </Button>
         </Grid>
 
         <!-- ============================= -->
-        <!-- MAIN -->
+        <!-- MAIN CONTENT -->
         <!-- ============================= -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto">
+
             <StackPanel Width="420"
                         Margin="0,20,0,0"
                         HorizontalAlignment="Center">
 
-                <!-- TRAFFIC -->
+                <!-- Traffic -->
                 <TextBlock Text="{Binding TrafficInfo}"
-                           FontSize="16"
                            Foreground="{DynamicResource ForegroundBrush}"
+                           FontSize="16"
                            HorizontalAlignment="Center"/>
 
-                <!-- EXPIRE -->
+                <!-- Expire -->
                 <TextBlock Text="{Binding ExpireInfo}"
-                           FontSize="15"
                            Foreground="{DynamicResource ForegroundBrush}"
+                           FontSize="15"
                            Opacity="0.8"
                            HorizontalAlignment="Center"/>
 
@@ -117,7 +120,8 @@
                             <Grid>
 
                                 <Ellipse x:Name="Circle"
-                                         Width="150" Height="150"
+                                         Width="150"
+                                         Height="150"
                                          Fill="#202020"
                                          Stroke="#555"
                                          StrokeThickness="3"/>
@@ -137,29 +141,24 @@
                             </Grid>
 
                             <ControlTemplate.Triggers>
-
-                                <!-- Connected -->
                                 <DataTrigger Binding="{Binding ConnectionStatus}" Value="Connected">
                                     <Setter TargetName="Circle" Property="Fill" Value="#0A332E"/>
                                     <Setter TargetName="Circle" Property="Stroke" Value="#21D4A8"/>
                                 </DataTrigger>
 
-                                <!-- Disconnected -->
                                 <DataTrigger Binding="{Binding ConnectionStatus}" Value="Disconnected">
                                     <Setter TargetName="Circle" Property="Fill" Value="#252525"/>
                                     <Setter TargetName="Circle" Property="Stroke" Value="#444"/>
                                 </DataTrigger>
-
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
-
                 </Button>
 
-                <!-- PING -->
+                <!-- Ping -->
                 <TextBlock Text="{Binding PingText}"
-                           FontSize="15"
                            Foreground="{DynamicResource ForegroundBrush}"
+                           FontSize="15"
                            HorizontalAlignment="Center"
                            Cursor="Hand">
                     <TextBlock.InputBindings>
@@ -169,11 +168,14 @@
                 </TextBlock>
 
                 <!-- ============================= -->
-                <!-- PROFILES -->
+                <!-- PROFILES (CIRCLES) -->
                 <!-- ============================= -->
+
                 <ScrollViewer HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Disabled"
-                              Margin="0,20,0,0">
+                              Margin="0,20,0,0"
+                              PanningMode="HorizontalOnly"
+                              ManipulationMode="TranslateX">
 
                     <ItemsControl ItemsSource="{Binding Profiles}">
                         <ItemsControl.ItemsPanel>
@@ -191,12 +193,9 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
 
-                                <!-- ===================== -->
-                                <!-- دکمه پروفایل WITHOUT HOVER -->
-                                <!-- ===================== -->
                                 <Button Style="{StaticResource ProfileButtonStyle}"
                                         Command="{Binding DataContext.SelectProfileCommand,
-                                                  RelativeSource={RelativeSource AncestorType=Page}}"
+                                                          RelativeSource={RelativeSource AncestorType=Page}}"
                                         CommandParameter="{Binding}">
 
                                     <StackPanel Orientation="Vertical"
@@ -211,15 +210,18 @@
                                                 Background="{DynamicResource CardBrush}"
                                                 HorizontalAlignment="Center">
 
-                                            <Ellipse Fill="{DynamicResource ForegroundBrush}"/>
+                                            <Ellipse Fill="{DynamicResource ForegroundBrush}"
+                                                     IsHitTestVisible="False"/>
                                         </Border>
 
-                                        <!-- TEXT -->
+                                        <!-- REMARK -->
                                         <TextBlock Text="{Binding Remark}"
+                                                   Foreground="{DynamicResource ForegroundBrush}"
                                                    FontSize="13"
-                                                   Margin="0,6,0,0"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxWidth="80"
                                                    HorizontalAlignment="Center"
-                                                   Foreground="{DynamicResource ForegroundBrush}"/>
+                                                   Margin="0,6,0,0"/>
                                     </StackPanel>
 
                                 </Button>
@@ -230,26 +232,25 @@
                     </ItemsControl>
                 </ScrollViewer>
 
-                <!-- ERROR -->
+                <!-- Error -->
                 <TextBlock Text="{Binding ErrorMessage}"
                            Foreground="#FF5555"
                            FontSize="14"
                            TextWrapping="Wrap"
                            Margin="0,10,0,0"
-                           Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}"/>
+                           Visibility="{Binding HasError,
+                                        Converter={StaticResource BoolToVisibility}}"/>
 
             </StackPanel>
         </ScrollViewer>
 
-        <!-- VERSION -->
         <TextBlock Grid.Row="2"
                    Text="{Binding AppVersion}"
-                   Foreground="{DynamicResource ForegroundBrush}"
-                   FontSize="13"
-                   Opacity="0.6"
+                   HorizontalAlignment="Center"
                    VerticalAlignment="Center"
-                   HorizontalAlignment="Center"/>
-
+                   Foreground="{DynamicResource ForegroundBrush}"
+                   Opacity="0.6"
+                   FontSize="13"/>
     </Grid>
 
 </Page>
