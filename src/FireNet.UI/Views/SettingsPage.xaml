@@ -57,16 +57,25 @@
                       VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="20">
 
-                <!-- Example Setting -->
+                <!-- Theme Setting -->
                 <TextBlock Text="Theme:"
                            Foreground="{DynamicResource ForegroundBrush}"
                            FontSize="16"/>
 
-                <ComboBox SelectedIndex="{Binding SelectedThemeIndex}"
-                          Margin="0,8,0,20">
-                    <ComboBoxItem Content="Dark"/>
-                    <ComboBoxItem Content="Light"/>
-                </ComboBox>
+                <!-- ComboBox: استفاده از ThemeOptions + SelectedTheme -->
+                <ComboBox ItemsSource="{Binding ThemeOptions}"
+                          SelectedItem="{Binding SelectedTheme}"
+                          Margin="0,8,0,10"
+                          Width="150"/>
+
+                <!-- دکمه Apply Theme -->
+                <Button Content="Apply theme"
+                        Command="{Binding ApplyThemeCommand}"
+                        Margin="0,0,0,20"
+                        Padding="10,5"
+                        HorizontalAlignment="Left"/>
+
+                <!-- بقیه تنظیمات (اگر بعداً اضافه شد) اینجا قرار می‌گیرد -->
 
             </StackPanel>
         </ScrollViewer>
