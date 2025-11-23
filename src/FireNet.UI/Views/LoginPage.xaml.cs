@@ -8,10 +8,9 @@ namespace FireNet.UI.Views
         public LoginPage()
         {
             InitializeComponent();
-            DataContext = new LoginViewModel();
+            DataContext = new LoginViewModel();   // ← ALWAYS NEW INSTANCE
         }
 
-        // این متد از PasswordBox صدا زده می‌شود
         private void PasswordBox_PasswordChanged(object sender, System.Windows.RoutedEventArgs e)
         {
             if (DataContext is LoginViewModel vm)

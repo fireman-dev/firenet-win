@@ -25,9 +25,8 @@ namespace FireNet.UI.Navigation
         public static void NavigateToLogin()
         {
             EnsureFrame();
-
-            _loginPage ??= new LoginPage();
-            _frame.Navigate(_loginPage);
+            
+            _frame.Navigate(new LoginPage());
         }
 
         public static void NavigateToHome()
