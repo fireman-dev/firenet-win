@@ -64,7 +64,7 @@
                     BorderThickness="0"
                     Command="{Binding OpenSettingsCommand}">
                 <Image Source="Assets/Icons/settings.png"
-                       Width="26" Height="26"/>
+                       Width="52" Height="52"/>
             </Button>
 
             <TextBlock Grid.Column="1"
@@ -81,7 +81,7 @@
                     BorderThickness="0"
                     Command="{Binding LogoutCommand}">
                 <Image Source="Assets/Icons/logout.png"
-                       Width="26" Height="26"/>
+                       Width="52" Height="52"/>
             </Button>
         </Grid>
 
