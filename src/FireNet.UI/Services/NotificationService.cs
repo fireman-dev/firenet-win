@@ -1,10 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using FireNet.Core.Api;
 using FireNet.Core.Api.Dto.Notifications;
-using Microsoft.Windows.AppNotifications;
-using Microsoft.Windows.AppNotifications.Builder;
 
 namespace FireNet.UI.Services
 {
@@ -19,9 +18,6 @@ namespace FireNet.UI.Services
         public NotificationService(PanelApiClient api)
         {
             _api = api;
-
-            // WinAppSDK Toast Init
-            AppNotificationManager.Default.Register();
         }
 
         public void Start()
@@ -44,32 +40,54 @@ namespace FireNet.UI.Services
         {
             try
             {
-                var response = await _api.FetchNotificationsAsync();
+                var result = await _api.FetchNotificationsAsync();
 
-                if (response == null || response.Notifications.Count == 0)
+                if (result == null || result.Notifications.Count == 0)
                     return;
 
-                foreach (var noti in response.Notifications)
+                foreach (var n in result.Notifications)
                 {
-                    ShowToast(noti);
+                    ShowToast(n.Title, n.Body);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Notification Error: " + ex.Message);
+                Debug.WriteLine("Notification Error: " + ex.Message);
             }
         }
 
-        // نسخه پایدار WinAppSDK
-        private void ShowToast(NotificationItem item)
+        // -----------------------------------------------------------
+        // ✔ Toast Notification با PowerShell (سازگار با .NET 9 + GitHub Actions)
+        // -----------------------------------------------------------
+        private void ShowToast(string title, string message)
         {
-            var builder = new AppNotificationBuilder()
-                .AddText(item.Title)
-                .AddText(item.Body);
+            string script = $@"
+[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
 
-            var notification = builder.BuildNotification();
+$Template = [Windows.UI.Notifications.ToastTemplateType]::ToastText02
+$XML = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent($Template)
 
-            AppNotificationManager.Default.Show(notification);
+$TextNodes = $XML.GetElementsByTagName('text')
+$TextNodes.Item(0).AppendChild($XML.CreateTextNode('{Escape(title)}')) > $null
+$TextNodes.Item(1).AppendChild($XML.CreateTextNode('{Escape(message)}')) > $null
+
+$Toast = [Windows.UI.Notifications.ToastNotification]::new($XML)
+$Notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('FireNet')
+$Notifier.Show($Toast)
+";
+
+            Process.Start(new ProcessStartInfo()
+            {
+                FileName = "powershell",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false
+            });
+        }
+
+        private string Escape(string s)
+        {
+            return s.Replace("'", "''").Replace("\"", "\\\"");
         }
     }
 }
