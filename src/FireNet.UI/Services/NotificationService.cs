@@ -59,12 +59,30 @@ namespace FireNet.UI.Services
         // -----------------------------------------------------------
         // ✔ Toast Notification با PowerShell (سازگار با .NET 9 + GitHub Actions)
         // -----------------------------------------------------------
-        private void ShowToast(NotificationItem item)
+        private void ShowToast(string title, string message)
         {
-            new ToastContentBuilder()
-                .AddText(item.Title)
-                .AddText(item.Body)
-                .Show();    // ← نسخه 7.1.3 این را پشتیبانی می‌کند
+            string script = $@"
+                [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
+
+                $Template = [Windows.UI.Notifications.ToastTemplateType]::ToastText02
+                $XML = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent($Template)
+
+                $TextNodes = $XML.GetElementsByTagName('text')
+                $TextNodes.Item(0).AppendChild($XML.CreateTextNode('{Escape(title)}')) > $null
+                $TextNodes.Item(1).AppendChild($XML.CreateTextNode('{Escape(message)}')) > $null
+
+                $Toast = [Windows.UI.Notifications.ToastNotification]::new($XML)
+                $Notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('FireNet')
+                $Notifier.Show($Toast)
+                ";
+
+            Process.Start(new ProcessStartInfo()
+            {
+                FileName = "powershell",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false
+            });
         }
 
         private string Escape(string s)
