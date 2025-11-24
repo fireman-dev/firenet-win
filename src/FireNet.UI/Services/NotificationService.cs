@@ -58,10 +58,13 @@ namespace FireNet.UI.Services
 
         private void ShowToast(NotificationItem item)
         {
-            new ToastContentBuilder()
+            var toast = new ToastContentBuilder()
                 .AddText(item.Title)
                 .AddText(item.Body)
-                .Show();
+                .GetToastContent();
+
+            var notification = new Windows.UI.Notifications.ToastNotification(toast.GetXml());
+            Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier("FireNet").Show(notification);
         }
     }
 }

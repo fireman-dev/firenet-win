@@ -115,21 +115,21 @@ namespace FireNet.Core.Api
         // // -----------------------------------------------------------
         // // UPDATE FCM TOKEN
         // // -----------------------------------------------------------
-        // public async Task<bool> UpdateFcmTokenAsync(UpdateFcmTokenRequest req)
-        // {
-        //     AttachToken();
+        public async Task<bool> UpdateFcmTokenAsync(UpdateFcmTokenRequest req)
+        {
+            AttachToken();
 
-        //     var json = JsonSerializer.Serialize(req);
-        //     var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var json = JsonSerializer.Serialize(req);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        //     var response = await _http.PostAsync($"{_baseUrl}/api/update-fcm-token", content);
-        //     string body = await response.Content.ReadAsStringAsync();
+            var response = await _http.PostAsync($"{_baseUrl}/api/update-fcm-token", content);
+            string body = await response.Content.ReadAsStringAsync();
 
-        //     if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        //         HandleUnauthorized(body);
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                HandleUnauthorized(body);
 
-        //     return response.IsSuccessStatusCode;
-        // }
+            return response.IsSuccessStatusCode;
+        }
 
         // -----------------------------------------------------------
         // REPORT UPDATE
