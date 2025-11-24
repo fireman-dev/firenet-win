@@ -53,6 +53,22 @@ namespace FireNet.Core.Api
                 new AuthenticationHeaderValue("Bearer", token);
         }
 
+        private static string SanitizeToken(string token)
+        {
+            token = token.Trim();
+
+            var sb = new StringBuilder(token.Length);
+
+            foreach (char c in token)
+            {
+                // حذف کامل همه کاراکترهای کنترل (مثل \0، \n، \r، BOM)
+                if (!char.IsControl(c))
+                    sb.Append(c);
+            }
+
+            return sb.ToString();
+        }
+
         // -----------------------------------------------------------
         // هندل کردن 401 (توکن نامعتبر یا منقضی)
         // -----------------------------------------------------------
