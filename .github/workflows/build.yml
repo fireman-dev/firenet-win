@@ -21,6 +21,9 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore ./src/FireNet.UI/FireNet.UI.csproj
 
+    - name: Install Toast Notification Toolkit
+      run: dotnet add "./src/FireNet.UI/FireNet.UI.csproj" package Microsoft.Toolkit.Uwp.Notifications
+
     - name: Build
       run: dotnet build ./src/FireNet.UI/FireNet.UI.csproj -c Release
 

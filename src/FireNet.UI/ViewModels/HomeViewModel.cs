@@ -9,8 +9,8 @@ using FireNet.Core.Api.Dto;
 using FireNet.Core.Config;
 using FireNet.Core.Session;
 using FireNet.Core.Xray;
-using FireNet.Core.Notifications;
 using FireNet.UI.Navigation;
+using FireNet.UI.Services;    // ←← تنها تغییر ضروری (NotificationService در UI است)
 
 namespace FireNet.UI.ViewModels
 {
@@ -20,6 +20,8 @@ namespace FireNet.UI.ViewModels
         // SINGLETON INSTANCE
         // -------------------------------------------------
         public static HomeViewModel Instance { get; } = new HomeViewModel();
+
+        private NotificationService _notificationService;   // ←← همین نمونه استفاده می‌شود
 
         private HomeViewModel()
         {
@@ -46,7 +48,11 @@ namespace FireNet.UI.ViewModels
                 ConnectionStatus = "Disconnected";
             };
 
-            // بعد از لود Home، سرویس نوتیف رو استارت می‌کنیم
+            // --------------------------------------------------------
+            // شروع Polling بعد از باز شدن HomePage
+            // اولین fetch فوری است
+            // سپس هر 5 دقیقه
+            // --------------------------------------------------------
             _notificationService.Start();
 
             // وضعیت فعلی کاربر و پروفایل‌ها
@@ -212,7 +218,6 @@ namespace FireNet.UI.ViewModels
         private readonly PanelApiClient _api;
         private readonly XrayConfigBuilder _configBuilder;
         private readonly XrayProcessManager _xray;
-        private readonly NotificationService _notificationService;
 
         private StatusResponse? _status;
 
