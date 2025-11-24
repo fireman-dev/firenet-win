@@ -1,9 +1,10 @@
-using Microsoft.Toolkit.Uwp.Notifications; // ← همین کافی است
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using FireNet.Core.Api;
 using FireNet.Core.Api.Dto.Notifications;
+using Microsoft.Windows.AppNotifications;
+using Microsoft.Windows.AppNotifications.Builder;
 
 namespace FireNet.UI.Services
 {
@@ -18,6 +19,9 @@ namespace FireNet.UI.Services
         public NotificationService(PanelApiClient api)
         {
             _api = api;
+
+            // WinAppSDK Toast Init
+            AppNotificationManager.Default.Register();
         }
 
         public void Start()
@@ -56,19 +60,16 @@ namespace FireNet.UI.Services
             }
         }
 
-        // -----------------------------------------------------------
-        // 🔥 مهم‌ترین بخش: نسخه سازگار با GitHub Actions + .NET 9
-        // -----------------------------------------------------------
+        // نسخه پایدار WinAppSDK
         private void ShowToast(NotificationItem item)
         {
-            var content = new ToastContentBuilder()
+            var builder = new AppNotificationBuilder()
                 .AddText(item.Title)
-                .AddText(item.Body)
-                .GetToastContent();
+                .AddText(item.Body);
 
-            // سازگار با Win32/WPF بدون نیاز به Windows.UI.*
-            var notif = new ToastNotificationManagerCompat.ToastNotification(content.GetXml());
-            ToastNotificationManagerCompat.CreateToastNotifier().Show(notif);
+            var notification = builder.BuildNotification();
+
+            AppNotificationManager.Default.Show(notification);
         }
     }
 }
