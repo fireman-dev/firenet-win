@@ -13,8 +13,8 @@ namespace FireNet.Core.Notifications
         private Timer? _timer;
         private bool _isRunning;
 
-        // هر 60 ثانیه پولینگ انجام شود
-        private readonly TimeSpan _interval = TimeSpan.FromSeconds(60);
+        // هر 5 دقیقه پولینگ انجام شود
+        private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
 
         public NotificationService(PanelApiClient apiClient)
         {
@@ -29,6 +29,7 @@ namespace FireNet.Core.Notifications
             if (_isRunning)
                 return;
 
+            // اولین Tick بلافاصله بعد از Start
             _timer = new Timer(async _ => await Tick(), null, TimeSpan.Zero, _interval);
             _isRunning = true;
         }

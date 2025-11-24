@@ -9,6 +9,7 @@ using FireNet.Core.Api.Dto;
 using FireNet.Core.Config;
 using FireNet.Core.Session;
 using FireNet.Core.Xray;
+using FireNet.Core.Notifications;
 using FireNet.UI.Navigation;
 
 namespace FireNet.UI.ViewModels
@@ -28,6 +29,7 @@ namespace FireNet.UI.ViewModels
             _api = new PanelApiClient(_session, "https://report.soft99.sbs:2053");
             _configBuilder = new XrayConfigBuilder();
             _xray = new XrayProcessManager();
+            _notificationService = new NotificationService(_api);
 
             AppVersion = $"v{Assembly.GetExecutingAssembly().GetName().Version}";
 
@@ -44,6 +46,10 @@ namespace FireNet.UI.ViewModels
                 ConnectionStatus = "Disconnected";
             };
 
+            // بعد از لود Home، سرویس نوتیف رو استارت می‌کنیم
+            _notificationService.Start();
+
+            // وضعیت فعلی کاربر و پروفایل‌ها
             _ = LoadStatus();
         }
 
@@ -206,6 +212,7 @@ namespace FireNet.UI.ViewModels
         private readonly PanelApiClient _api;
         private readonly XrayConfigBuilder _configBuilder;
         private readonly XrayProcessManager _xray;
+        private readonly NotificationService _notificationService;
 
         private StatusResponse? _status;
 
@@ -472,6 +479,8 @@ namespace FireNet.UI.ViewModels
                 ErrorMessage = ex.Message;
                 return;
             }
+
+            _notificationService.Stop();
 
             NavigationService.NavigateToLogin();
         }
