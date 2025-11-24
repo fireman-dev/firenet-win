@@ -33,12 +33,24 @@ namespace FireNet.Core.Api
         // -----------------------------------------------------------
         private void AttachToken()
         {
+            // همیشه قبل از هر چیز، Authorization پاک شود
+            _http.DefaultRequestHeaders.Authorization = null;
+
             string token = _session.GetToken();
-            if (!string.IsNullOrEmpty(token))
-            {
-                _http.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", token);
-            }
+
+            if (string.IsNullOrWhiteSpace(token))
+                return; // توکنی نیست → نباید Authorization ست شود
+
+            // پاکسازی کامل کاراکترهای خراب، newline، null، control-char
+            token = SanitizeToken(token);
+
+            // اگر طول کمتر از 20 بود، یعنی توکن واقعی نیست → ازش استفاده نکن
+            if (token.Length < 20)
+                return;
+
+            // در این نقطه مطمئنیم توکن سالمه → هدر تنظیم می‌شود
+            _http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
         }
 
         // -----------------------------------------------------------
