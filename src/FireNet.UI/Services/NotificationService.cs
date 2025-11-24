@@ -1,9 +1,9 @@
+using Microsoft.Toolkit.Uwp.Notifications; // ← همین کافی است
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using FireNet.Core.Api;
 using FireNet.Core.Api.Dto.Notifications;
-using Microsoft.Toolkit.Uwp.Notifications; // ToastContentBuilder + Compat API
 
 namespace FireNet.UI.Services
 {
@@ -56,16 +56,19 @@ namespace FireNet.UI.Services
             }
         }
 
-        // ✔ نسخه صحیح Toast سازگار با .NET 9 و GitHub Actions
+        // -----------------------------------------------------------
+        // 🔥 مهم‌ترین بخش: نسخه سازگار با GitHub Actions + .NET 9
+        // -----------------------------------------------------------
         private void ShowToast(NotificationItem item)
         {
-            new ToastContentBuilder()
+            var content = new ToastContentBuilder()
                 .AddText(item.Title)
                 .AddText(item.Body)
-                .Show(toast =>
-                {
-                    toast.ExpirationTime = DateTime.Now.AddMinutes(10);
-                });
+                .GetToastContent();
+
+            // سازگار با Win32/WPF بدون نیاز به Windows.UI.*
+            var notif = new ToastNotificationManagerCompat.ToastNotification(content.GetXml());
+            ToastNotificationManagerCompat.CreateToastNotifier().Show(notif);
         }
     }
 }
