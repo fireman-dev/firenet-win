@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FireNet.Core.Api.Dto;
+using FireNet.Core.Api.Dto.Notifications;
 using FireNet.Core.Session;
 
 namespace FireNet.Core.Api
@@ -44,15 +45,12 @@ namespace FireNet.Core.Api
         // -----------------------------------------------------------
         private void HandleUnauthorized(string body)
         {
-            // اینجا می‌تونیم لاگ دقیق‌تر هم بگیریم اگر خواستی
             _session.ClearSession();
-
-            // پیام واحد که ViewModel بر اساسش ریدایرکت می‌کند
             throw new Exception("Token expired");
         }
 
         // -----------------------------------------------------------
-        // 1) LOGIN
+        // LOGIN
         // -----------------------------------------------------------
         public async Task<LoginResponse> LoginAsync(LoginRequest req)
         {
@@ -76,7 +74,7 @@ namespace FireNet.Core.Api
         }
 
         // -----------------------------------------------------------
-        // 2) STATUS
+        // STATUS
         // -----------------------------------------------------------
         public async Task<StatusResponse> GetStatusAsync()
         {
@@ -86,9 +84,7 @@ namespace FireNet.Core.Api
             string body = await response.Content.ReadAsStringAsync();
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
                 HandleUnauthorized(body);
-            }
 
             if (!response.IsSuccessStatusCode)
                 throw new Exception($"Status error: {body}");
@@ -98,7 +94,7 @@ namespace FireNet.Core.Api
         }
 
         // -----------------------------------------------------------
-        // 3) KEEP ALIVE
+        // KEEP ALIVE
         // -----------------------------------------------------------
         public async Task<bool> KeepAliveAsync()
         {
@@ -108,9 +104,7 @@ namespace FireNet.Core.Api
             string body = await response.Content.ReadAsStringAsync();
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
                 HandleUnauthorized(body);
-            }
 
             if (!response.IsSuccessStatusCode)
                 throw new Exception($"KeepAlive error: {body}");
@@ -118,29 +112,27 @@ namespace FireNet.Core.Api
             return true;
         }
 
-        // -----------------------------------------------------------
-        // 4) UPDATE FCM TOKEN
-        // -----------------------------------------------------------
-        public async Task<bool> UpdateFcmTokenAsync(UpdateFcmTokenRequest req)
-        {
-            AttachToken();
+        // // -----------------------------------------------------------
+        // // UPDATE FCM TOKEN
+        // // -----------------------------------------------------------
+        // public async Task<bool> UpdateFcmTokenAsync(UpdateFcmTokenRequest req)
+        // {
+        //     AttachToken();
 
-            var json = JsonSerializer.Serialize(req);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+        //     var json = JsonSerializer.Serialize(req);
+        //     var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _http.PostAsync($"{_baseUrl}/api/update-fcm-token", content);
-            string body = await response.Content.ReadAsStringAsync();
+        //     var response = await _http.PostAsync($"{_baseUrl}/api/update-fcm-token", content);
+        //     string body = await response.Content.ReadAsStringAsync();
 
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
-                HandleUnauthorized(body);
-            }
+        //     if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        //         HandleUnauthorized(body);
 
-            return response.IsSuccessStatusCode;
-        }
+        //     return response.IsSuccessStatusCode;
+        // }
 
         // -----------------------------------------------------------
-        // 5) REPORT UPDATE
+        // REPORT UPDATE
         // -----------------------------------------------------------
         public async Task<bool> ReportUpdateAsync(ReportUpdateRequest req)
         {
@@ -153,9 +145,7 @@ namespace FireNet.Core.Api
             string body = await response.Content.ReadAsStringAsync();
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
                 HandleUnauthorized(body);
-            }
 
             if (!response.IsSuccessStatusCode)
                 throw new Exception($"ReportUpdate error: {body}");
@@ -164,7 +154,7 @@ namespace FireNet.Core.Api
         }
 
         // -----------------------------------------------------------
-        // 6) UPDATE PROMPT SEEN
+        // UPDATE PROMPT SEEN
         // -----------------------------------------------------------
         public async Task<bool> UpdatePromptSeenAsync(UpdatePromptSeenRequest req)
         {
@@ -177,9 +167,7 @@ namespace FireNet.Core.Api
             string body = await response.Content.ReadAsStringAsync();
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
                 HandleUnauthorized(body);
-            }
 
             if (!response.IsSuccessStatusCode)
                 throw new Exception($"UpdatePromptSeen error: {body}");
@@ -188,25 +176,41 @@ namespace FireNet.Core.Api
         }
 
         // -----------------------------------------------------------
-        // 7) LOGOUT
+        // LOGOUT
         // -----------------------------------------------------------
         public async Task<bool> LogoutAsync()
         {
             AttachToken();
 
             var response = await _http.PostAsync($"{_baseUrl}/api/logout", null);
-            string body = await response.Content.ReadAsStringAsync();
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                // توکن قبلاً باطل شده – SESSION رو خالی کن ولی ارور نگیر
                 _session.ClearSession();
                 return true;
             }
 
             _session.ClearSession();
-
             return response.IsSuccessStatusCode;
+        }
+
+        // -----------------------------------------------------------
+        // NEW → FETCH NOTIFICATIONS
+        // -----------------------------------------------------------
+        public async Task<NotificationFetchResponse?> FetchNotificationsAsync()
+        {
+            AttachToken();
+
+            var response = await _http.GetAsync($"{_baseUrl}/api/notifications/fetch");
+            string body = await response.Content.ReadAsStringAsync();
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                HandleUnauthorized(body);
+
+            if (!response.IsSuccessStatusCode)
+                throw new Exception($"Notification fetch error: {body}");
+
+            return JsonSerializer.Deserialize<NotificationFetchResponse>(body);
         }
     }
 }
