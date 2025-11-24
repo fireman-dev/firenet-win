@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 
 namespace FireNet.Core.Session
@@ -14,6 +15,7 @@ namespace FireNet.Core.Session
         private readonly string _sessionPath;
         private readonly string _crashLogPath;
 
+        // دادهٔ سشن که داخل فایل JSON ذخیره می‌شود
         private class SessionData
         {
             public string? Token { get; set; }
@@ -23,6 +25,9 @@ namespace FireNet.Core.Session
 
         private SessionData _current = new();
 
+        // --------------------------------------------------------------------
+        // سازنده‌ی خصوصی (Singleton)
+        // --------------------------------------------------------------------
         private SessionManager()
         {
             string appDir = Path.Combine(
@@ -38,56 +43,98 @@ namespace FireNet.Core.Session
             LoadSession();
         }
 
+        // --------------------------------------------------------------------
+        // بارگذاری سشن از فایل
+        // --------------------------------------------------------------------
         private void LoadSession()
         {
             try
             {
                 if (File.Exists(_sessionPath))
                 {
-                    string json = File.ReadAllText(_sessionPath);
+                    string json = File.ReadAllText(_sessionPath, Encoding.UTF8);
+
+                    if (string.IsNullOrWhiteSpace(json))
+                    {
+                        _current = new SessionData();
+                        return;
+                    }
+
                     var data = JsonSerializer.Deserialize<SessionData>(json);
-                    if (data != null)
-                        _current = data;
+
+                    if (data == null)
+                    {
+                        _current = new SessionData();
+                        return;
+                    }
+
+                    // پاکسازی توکن در لحظه‌ی Load
+                    if (!string.IsNullOrWhiteSpace(data.Token))
+                        data.Token = SanitizeToken(data.Token);
+
+                    _current = data;
+                }
+                else
+                {
+                    _current = new SessionData();
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 _current = new SessionData();
+                LogCrash("LoadSession failed", ex);
             }
         }
 
+        // --------------------------------------------------------------------
+        // ذخیره‌کردن سشن در فایل
+        // --------------------------------------------------------------------
         private void SaveSession()
         {
             try
             {
+                // قبل از ذخیره، توکن اگر هست پاکسازی شود
+                if (!string.IsNullOrWhiteSpace(_current.Token))
+                    _current.Token = SanitizeToken(_current.Token!);
+
                 string json = JsonSerializer.Serialize(_current, new JsonSerializerOptions
                 {
                     WriteIndented = true
                 });
-                File.WriteAllText(_sessionPath, json);
+
+                File.WriteAllText(_sessionPath, json, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore
+                LogCrash("SaveSession failed", ex);
             }
         }
 
+        // --------------------------------------------------------------------
+        // ذخیره توکن
+        // --------------------------------------------------------------------
         public void SaveToken(string token)
         {
-            _current.Token = token;
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                _current.Token = null;
+                SaveSession();
+                return;
+            }
+
+            _current.Token = SanitizeToken(token);
             SaveSession();
         }
 
-        public void SaveUser(string username)
-        {
-            _current.Username = username;
-            _current.DisplayName = username;
-            SaveSession();
-        }
-
+        // --------------------------------------------------------------------
+        // گرفتن توکن
+        // --------------------------------------------------------------------
         public string GetToken()
         {
-            return _current.Token ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(_current.Token))
+                return string.Empty;
+
+            return SanitizeToken(_current.Token!);
         }
 
         public bool HasToken()
@@ -95,21 +142,64 @@ namespace FireNet.Core.Session
             return !string.IsNullOrWhiteSpace(_current.Token);
         }
 
+        // --------------------------------------------------------------------
+        // ذخیره نام کاربر
+        // --------------------------------------------------------------------
+        public void SaveUser(string username)
+        {
+            _current.Username = username;
+            _current.DisplayName = username;
+            SaveSession();
+        }
+
+        public string? GetUsername() => _current.Username;
+
+        public string? GetDisplayName() => _current.DisplayName;
+
+        // --------------------------------------------------------------------
+        // پاک‌کردن سشن (مثلاً موقع Logout یا Token expired)
+        // --------------------------------------------------------------------
         public void ClearSession()
         {
             _current = new SessionData();
+
             try
             {
                 if (File.Exists(_sessionPath))
                     File.Delete(_sessionPath);
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore
+                LogCrash("ClearSession failed", ex);
             }
         }
 
-        // برای لاگ کرش‌ها
+        // --------------------------------------------------------------------
+        // پاکسازی و نرمال‌سازی توکن
+        // --------------------------------------------------------------------
+        private static string SanitizeToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                return string.Empty;
+
+            token = token.Trim();
+
+            var sb = new StringBuilder(token.Length);
+
+            foreach (char c in token)
+            {
+                // حذف کاراکترهای کنترل (null, newline, tab, etc.)
+                if (!char.IsControl(c))
+                    sb.Append(c);
+            }
+
+            // اگر بعد از پاکسازی خیلی کوتاه بود، عملاً اعتباری ندارد
+            return sb.ToString();
+        }
+
+        // --------------------------------------------------------------------
+        // لاگ کرش‌ها
+        // --------------------------------------------------------------------
         public void LogCrash(string message, Exception? ex = null)
         {
             try
@@ -126,6 +216,7 @@ namespace FireNet.Core.Session
                     logEntry += Environment.NewLine;
                 }
 
+                // محدود نگه داشتن حجم لاگ
                 if (File.Exists(_crashLogPath))
                 {
                     var lines = File.ReadAllLines(_crashLogPath);
