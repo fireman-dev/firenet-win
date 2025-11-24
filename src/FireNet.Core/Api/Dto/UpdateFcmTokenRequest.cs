@@ -5,6 +5,6 @@ namespace FireNet.Core.Api.Dto
     public class UpdateFcmTokenRequest
     {
         [JsonPropertyName("fcm_token")]
-        public string FcmToken { get; set; } = "";
+        public string fcm_token { get; set; } = "";
     }
 }

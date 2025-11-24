@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FireNet.Core.Api;
 using FireNet.Core.Api.Dto.Notifications;
-using Microsoft.Toolkit.Uwp.Notifications;
+using Microsoft.Toolkit.Uwp.Notifications; // ToastContentBuilder + Compat API
 
 namespace FireNet.UI.Services
 {
@@ -56,15 +56,16 @@ namespace FireNet.UI.Services
             }
         }
 
+        // ✔ نسخه صحیح Toast سازگار با .NET 9 و GitHub Actions
         private void ShowToast(NotificationItem item)
         {
-            var toast = new ToastContentBuilder()
+            new ToastContentBuilder()
                 .AddText(item.Title)
                 .AddText(item.Body)
-                .GetToastContent();
-
-            var notification = new Windows.UI.Notifications.ToastNotification(toast.GetXml());
-            Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier("FireNet").Show(notification);
+                .Show(toast =>
+                {
+                    toast.ExpirationTime = DateTime.Now.AddMinutes(10);
+                });
         }
     }
 }
