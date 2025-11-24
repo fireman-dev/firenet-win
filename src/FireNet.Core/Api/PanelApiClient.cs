@@ -29,26 +29,26 @@ namespace FireNet.Core.Api
         }
 
         // -----------------------------------------------------------
-        // اضافه کردن توکن JWT به هدر
+        // اضافه کردن توکن JWT به هدر (نسخه امن)
         // -----------------------------------------------------------
         private void AttachToken()
         {
-            // همیشه قبل از هر چیز، Authorization پاک شود
+            // همیشه قبل از هر چیز Authorization پاک شود
             _http.DefaultRequestHeaders.Authorization = null;
 
             string token = _session.GetToken();
 
             if (string.IsNullOrWhiteSpace(token))
-                return; // توکنی نیست → نباید Authorization ست شود
+                return;
 
-            // پاکسازی کامل کاراکترهای خراب، newline، null، control-char
+            // پاکسازی کامل از کنترل‌کاراکترها و فاصله‌های غیرضروری
             token = SanitizeToken(token);
 
-            // اگر طول کمتر از 20 بود، یعنی توکن واقعی نیست → ازش استفاده نکن
+            // هیچ JWT واقعی‌ای این‌قدر کوتاه نیست؛
+            // اگر این‌قدر کوتاه است، یعنی سشن خراب شده / فایل نیمه‌کاره است.
             if (token.Length < 20)
                 return;
 
-            // در این نقطه مطمئنیم توکن سالمه → هدر تنظیم می‌شود
             _http.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
         }
@@ -61,7 +61,7 @@ namespace FireNet.Core.Api
 
             foreach (char c in token)
             {
-                // حذف کامل همه کاراکترهای کنترل (مثل \0، \n، \r، BOM)
+                // حذف تمام کاراکترهای کنترل (مثل \0، \r، \n، \t، BOM و ...)
                 if (!char.IsControl(c))
                     sb.Append(c);
             }
@@ -79,7 +79,7 @@ namespace FireNet.Core.Api
         }
 
         // -----------------------------------------------------------
-        // LOGIN
+        // 1) LOGIN
         // -----------------------------------------------------------
         public async Task<LoginResponse> LoginAsync(LoginRequest req)
         {
@@ -103,7 +103,7 @@ namespace FireNet.Core.Api
         }
 
         // -----------------------------------------------------------
-        // STATUS
+        // 2) STATUS
         // -----------------------------------------------------------
         public async Task<StatusResponse> GetStatusAsync()
         {
@@ -112,8 +112,10 @@ namespace FireNet.Core.Api
             var response = await _http.GetAsync($"{_baseUrl}/api/status");
             string body = await response.Content.ReadAsStringAsync();
 
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
                 HandleUnauthorized(body);
+            }
 
             if (!response.IsSuccessStatusCode)
                 throw new Exception($"Status error: {body}");
@@ -123,7 +125,7 @@ namespace FireNet.Core.Api
         }
 
         // -----------------------------------------------------------
-        // KEEP ALIVE
+        // 3) KEEP ALIVE
         // -----------------------------------------------------------
         public async Task<bool> KeepAliveAsync()
         {
@@ -132,8 +134,10 @@ namespace FireNet.Core.Api
             var response = await _http.GetAsync($"{_baseUrl}/api/keep-alive");
             string body = await response.Content.ReadAsStringAsync();
 
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
                 HandleUnauthorized(body);
+            }
 
             if (!response.IsSuccessStatusCode)
                 throw new Exception($"KeepAlive error: {body}");
@@ -141,9 +145,9 @@ namespace FireNet.Core.Api
             return true;
         }
 
-        // // -----------------------------------------------------------
-        // // UPDATE FCM TOKEN
-        // // -----------------------------------------------------------
+        // -----------------------------------------------------------
+        // 4) UPDATE FCM TOKEN
+        // -----------------------------------------------------------
         public async Task<bool> UpdateFcmTokenAsync(UpdateFcmTokenRequest req)
         {
             AttachToken();
@@ -155,13 +159,15 @@ namespace FireNet.Core.Api
             string body = await response.Content.ReadAsStringAsync();
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
                 HandleUnauthorized(body);
+            }
 
             return response.IsSuccessStatusCode;
         }
 
         // -----------------------------------------------------------
-        // REPORT UPDATE
+        // 5) REPORT UPDATE
         // -----------------------------------------------------------
         public async Task<bool> ReportUpdateAsync(ReportUpdateRequest req)
         {
@@ -173,8 +179,10 @@ namespace FireNet.Core.Api
             var response = await _http.PostAsync($"{_baseUrl}/api/report-update", content);
             string body = await response.Content.ReadAsStringAsync();
 
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
                 HandleUnauthorized(body);
+            }
 
             if (!response.IsSuccessStatusCode)
                 throw new Exception($"ReportUpdate error: {body}");
@@ -183,7 +191,7 @@ namespace FireNet.Core.Api
         }
 
         // -----------------------------------------------------------
-        // UPDATE PROMPT SEEN
+        // 6) UPDATE PROMPT SEEN
         // -----------------------------------------------------------
         public async Task<bool> UpdatePromptSeenAsync(UpdatePromptSeenRequest req)
         {
@@ -195,8 +203,10 @@ namespace FireNet.Core.Api
             var response = await _http.PostAsync($"{_baseUrl}/api/update-prompt-seen", content);
             string body = await response.Content.ReadAsStringAsync();
 
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
                 HandleUnauthorized(body);
+            }
 
             if (!response.IsSuccessStatusCode)
                 throw new Exception($"UpdatePromptSeen error: {body}");
@@ -205,26 +215,29 @@ namespace FireNet.Core.Api
         }
 
         // -----------------------------------------------------------
-        // LOGOUT
+        // 7) LOGOUT
         // -----------------------------------------------------------
         public async Task<bool> LogoutAsync()
         {
             AttachToken();
 
             var response = await _http.PostAsync($"{_baseUrl}/api/logout", null);
+            string body = await response.Content.ReadAsStringAsync();
 
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
+                // توکن قبلاً باطل شده – SESSION رو خالی کن ولی ارور نگیر
                 _session.ClearSession();
                 return true;
             }
 
             _session.ClearSession();
+
             return response.IsSuccessStatusCode;
         }
 
         // -----------------------------------------------------------
-        // NEW → FETCH NOTIFICATIONS
+        // 8) FETCH NOTIFICATIONS (Polling)
         // -----------------------------------------------------------
         public async Task<NotificationFetchResponse?> FetchNotificationsAsync()
         {
@@ -233,8 +246,10 @@ namespace FireNet.Core.Api
             var response = await _http.GetAsync($"{_baseUrl}/api/notifications/fetch");
             string body = await response.Content.ReadAsStringAsync();
 
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
                 HandleUnauthorized(body);
+            }
 
             if (!response.IsSuccessStatusCode)
                 throw new Exception($"Notification fetch error: {body}");
