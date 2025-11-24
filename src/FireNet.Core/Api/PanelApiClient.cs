@@ -33,20 +33,16 @@ namespace FireNet.Core.Api
         // -----------------------------------------------------------
         private void AttachToken()
         {
-            // همیشه قبل از هر چیز Authorization پاک شود
             _http.DefaultRequestHeaders.Authorization = null;
 
             string token = _session.GetToken();
-
             if (string.IsNullOrWhiteSpace(token))
                 return;
 
-            // پاکسازی کامل از کنترل‌کاراکترها و فاصله‌های غیرضروری
+            // پاکسازی توکن قبل از استفاده
             token = SanitizeToken(token);
 
-            // هیچ JWT واقعی‌ای این‌قدر کوتاه نیست؛
-            // اگر این‌قدر کوتاه است، یعنی سشن خراب شده / فایل نیمه‌کاره است.
-            if (token.Length < 20)
+            if (string.IsNullOrWhiteSpace(token))
                 return;
 
             _http.DefaultRequestHeaders.Authorization =
